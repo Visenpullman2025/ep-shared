@@ -1,45 +1,38 @@
 # 项目流程与设定（公共）
 
-最后更新：2026-05-05（Topcheck：main 主线已接 P1b，下一步进入候选与商家确认单）
+最后更新：2026-05-05（P1 最小交易闭环已实现）
 
 > 本文件用于团队内部统一说法、对外展示业务设定与从询价到评价的主要步骤，不替代接口契约。  
 > **接口合同与状态**：用户端见 [../api/user-api.md](../api/user-api.md)，商家端见 [../api/merchant-api.md](../api/merchant-api.md)，已实现接口见 [../api/registry.md](../api/registry.md)；**需求与差异**统一写入 [../api/requests.md](../api/requests.md)。**路径更名对照**见 [frontend-api-renames.md](frontend-api-renames.md)。用户订单接口为 **`/api/v1/orders*`**（需 JWT）；认证由中间件保证。
 
 ## 当前重点与待办
 
-**Topcheck 结论（一句话）**：项目已经从“前端页面重构 + API 合同补齐”进入 **P1b 可联调阶段**：用户端可以从 **StandardService → RequirementPayload → QuotePreview → 创建订单** 走通；下一步最高杠杆不是继续补页面，而是实现 **MerchantCandidate + MerchantQuoteConfirmation**，让订单从 `waiting_merchant_confirmation` 继续走到用户确认和支付。
+**P1 结论（一句话）**：项目已从 **P1b 创建订单可联调** 推进到 **P1 最小交易闭环可联调**；订单可以从 **StandardService → RequirementPayload → QuotePreview → 创建订单 → 商家候选 → 商家确认单 → 用户确认 → 等支付** 走通，并已同步售后发起、商家能力配置、商家信用只读和旧 `serviceId` 用户入口降级。
 
 ### 当前已完成的主线事实
 
 - [x] `ep` 主仓库已推送到 `main`：标准服务报价页可用 `quotePreviewId` 创建订单；favorites 假入口和静态分类兜底已清理。
-- [x] `epbkend` 主仓库已推送到 `main`：`POST /api/v1/orders` 支持 `standardServiceCode + quotePreviewId`，订单响应返回目标 `workflowStatus`、`legacyWorkflowStatus`、`nextAction`。
+- [x] `epbkend` 主仓库已完成 P1：候选、MQC、用户确认、售后、商家能力、商家信用路由已注册；订单响应返回新主链扩展块。
 - [x] `ep-shared` 已推送到当前默认 `master`：`PROJECT_RULES.md`、状态机、`api/requests.md`、`api/registry.md` 与边界文档已同步。
-- [x] `epmerchant` 主仓库已推送到 `main`：同步项目规则入口；尚未进入 MerchantCapability / MQC 页面实现。
+- [x] `epmerchant` 已完成 P1 页面：MerchantCapability 管理、order-requests 待办、MQC 提交、credit-profile 只读展示。
+- [x] `ep` 已完成 P1 用户侧：订单中心/详情展示新主链扩展块，可确认 MQC，可发起售后；旧 `serviceId` 入口降级。
 
 ### 下一步任务队列
 
-#### P1c - 商家候选与确认单最小闭环
+#### P1 - 已完成
 
 - 范围：`ep-shared`、`epbkend/expatth-backend`、`epmerchant`、`ep`。
-- 目标：订单创建后生成或进入 **MerchantCandidate**，商家在 **MerchantQuoteConfirmation** 提交最终金额和服务时间，用户确认后订单进入 `waiting_payment_or_authorization`。
-- shared：冻结 R-009、R-013、R-014 的字段、错误码、状态推进条件；明确 `candidateStatus`、`mqcStatus` 与订单 `workflowStatus` 的关系。
-- 后端：新增候选/确认单表、模型、服务、路由；实现 `GET /api/v1/merchant/order-requests`、`POST /api/v1/merchant/order-requests/{candidateId}/quote-confirmation`、`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`。
-- 商家端：新增商家待办入口，展示候选单并提交最终价与服务时间。
-- 用户端：订单详情/订单中心展示 `waiting_user_confirmation`，提供确认商家报价入口。
-- 验收：后端 route/test 通过；`ep` 与 `epmerchant` lint/build 通过；浏览器走通“下单 → 商家确认 → 用户确认 → 等支付”。
+- 后端：R-009、R-011、R-012、R-013、R-014、R-015 已实现；订单响应包含新主链扩展块。
+- 商家端：MerchantCapability 最小管理、order-requests 待办、quote-confirmation 提交、credit-profile 只读展示已实现。
+- 用户端：订单详情/订单中心确认 MQC、发起 after-sales 已实现；旧 `serviceId` 用户入口已降级。
+- 验收：后端 route/test 通过；`ep` 与 `epmerchant` lint/typecheck/build 通过。真实数据库 migrate 与浏览器端到端联调仍需在本地服务和 DB 启动后执行。
 
-#### P1d - 旧 `serviceId` 用户入口降级
+#### P1+ - 暂不纳入本轮
 
-- 范围：`ep` 为主，必要时同步 `ep-shared`。
-- 目标：用户新主线不再从 `/services/[id]` 和 `orders/new?serviceId=` 进入；旧链接只做兼容提示或重定向。
-- 不做：不删除后端 compatibility 路由，直到商家能力和旧数据迁移有替代路径。
-- 验收：`rg "orders/new\\?serviceId|serviceId"` 只剩兼容层；新入口全部使用 `standardServiceCode`。
-
-#### P1e - 本地运行与依赖卫生
-
-- 范围：`epbkend/expatth-backend`。
-- 目标：消除 main 后端本地运行的环境噪声：缺 `.env`、PHP 8.5 与 `phpoffice/phpspreadsheet` 平台约束、Dcat deprecated 输出。
-- 验收：不用 `--ignore-platform-req=php` 也能 `composer install`；`composer test` 不需要临时 `APP_KEY`；无 vendor deprecation 污染测试输出。
+- R-004 商户评价客户：仍 draft，不做前端入口。
+- R-016 availability capacity/timeSlots：仍 proposed，本轮不改现有开放日 API JSON 形状。
+- R-017 GET quote-preview 旁路：仍 draft，本轮通过订单扩展块恢复报价信息。
+- 本地运行卫生：若影响测试则修；不把 PHP 8.5 依赖升级当作本轮业务完成条件。
 
 > **维护**：完成项改为 `- [x]`，并更新文件顶部「最后更新」；阶段任务若涉及 HTTP 合同，必须同步 `api/requests.md`，已实现后同步 `api/registry.md`。
 

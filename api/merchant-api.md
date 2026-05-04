@@ -1,6 +1,6 @@
 # 商家端 API 合同（Merchant API Contract）
 
-最后更新：2026-04-28（P0.5 合同边界与实现状态已标注）
+最后更新：2026-05-05（P1 商家能力、候选与确认单已实现）
 
 ## 概述
 
@@ -40,11 +40,11 @@
 - **响应包络**：与平台统一 `code` / `data` / `message` / `requestId` / `timestamp` 等约定一致；成功时 `code === 0`。
 - **时间与时区**：日期/预约等字段若无说明，以产品约定时区（如 `Asia/Bangkok`）与后端存储为准；**openDates** 当前为 `YYYY-MM-DD` 日期串列表（见下文第 3 组「商家开放日 / 容量」）。
 
-### P0.5 实现状态与联调
+### P1 实现状态与联调
 
 - **已**在现网**注册、可联调**（`registry`）：`merchant/auth*`、`profile`、`verification`、**`GET/PUT /merchant/availability`**、**`merchant/orders*`**、**`merchant/wallet*`**、**`merchant/services*`**（**compatibility**）等。  
-- **合同已写、P1 前**不得宣称「已上线」：**GET/POST/PUT/GET** **`/api/v1/merchant/capabilities`**、**`GET /api/v1/merchant/order-requests`**、**`POST /api/v1/merchant/order-requests/{candidateId}/quote-confirmation`**、**`GET /api/v1/merchant/credit-profile`**。  
-- **`openDates` 与** **`capacity` / timeSlots` 的演进**（`R-20260428-016`）：在**不删** 原 **`PUT /merchant/availability`** 的前提下**扩展** body/响应；**P0.5 不在合同内锁死** JSON 形状，**须**有 **P1** 的 schema 定稿。  
+- **P1 已实现**：**GET/POST/PUT/GET** **`/api/v1/merchant/capabilities`**、**`GET /api/v1/merchant/order-requests`**、**`POST /api/v1/merchant/order-requests/{candidateId}/quote-confirmation`**、**`GET /api/v1/merchant/credit-profile`**。已登记到 `api/registry.md`。
+- **`openDates` 与** **`capacity` / timeSlots` 的演进**（`R-20260428-016`）：在**不删** 原 **`PUT /merchant/availability`** 的前提下**扩展** body/响应；本轮 P1 不锁死 JSON 形状，不把 capacity/timeSlots 做成前端假能力。
 - **新主**商家报价入口以 **§4–5** 为准；旧 **`POST .../merchant/orders/{orderNo}/confirm`** 为 **compatibility/过渡**（以 `registry` 为准，若路由仍存在）。
 
 ---

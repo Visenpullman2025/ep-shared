@@ -1,6 +1,6 @@
 # API 需求池（唯一入口）
 
-最后更新：2026-05-05（P1b 本地 API 联调）
+最后更新：2026-05-05（P1 最小交易闭环已实现）
 
 > **所有**待实现、待改字段、待补错误码、跨角色冲突，**只**写本文件；**禁止**只在聊天或 issue 里约定后直连改代码。  
 > 合同文档 **user-api / merchant-api** 为**稳定合同**；**缺口**仍回写本文件。  
@@ -20,6 +20,17 @@
 - 状态：draft / proposed / accepted / implemented / rejected
 - 关联合同：
 - 关联代码：
+
+---
+
+## P1 本轮完成范围（2026-05-05）
+
+本轮 `/teamwork` 的 **P1** 把当前交易主链路从 P1b 推进到可联调的最小完整阶段：
+
+- **已实现**：R-009、R-011、R-012、R-013、R-014、R-015、R-019。
+- **已完成并作为依赖**：R-005、R-006、R-007、R-008、R-010、R-018。
+- **不纳入本轮必须完成**：R-004（商户评价客户，仍 draft）、R-016（availability capacity/timeSlots，仍 proposed）、R-017（GET quote-preview 旁路，仍 draft）。这些不得被前端伪装为已完成。
+- **验收链路**：用户创建订单 -> 商家看到候选 -> 商家提交 MerchantQuoteConfirmation -> 用户确认报价 -> 订单进入 `waiting_payment_or_authorization`；同时能力配置、信用只读、售后发起已有真实后端路由和前端入口。
 
 ---
 
@@ -159,9 +170,9 @@
 - 失败场景：422 订单态不允许、**`EX_ORDER_MQC_NOT_ALLOWED`**、**`EX_CANDIDATE_EXPIRED`/`EX_MQC_DUPLICATE`/`EX_USER_CONFIRM_DUPLICATE`**（见 `error-codes`）；409 多确认单竞态（**待决策** 定唯一策略）。
 - 待决策点：一订单多商家并行报价时，是否只允许一条 **accepted** MQC。
 - 影响页面：认价、去支付。
-- 状态：**accepted**（合同 `user-api` §5）
+- 状态：**implemented**（P1：后端路由、用户端 BFF 与订单详情/订单中心入口已接）
 - 关联合同：user-api §5
-- 关联代码：无（P1）
+- 关联代码：`MeCenterController@confirmMerchantQuote`、`OrderP1Service@confirmMerchantQuote`、`ep` `src/app/api/orders/[orderNo]/confirm-merchant-quote/route.ts`、`P1OrderMainChainBlock`
 
 ---
 
@@ -190,9 +201,9 @@
 - 失败场景：**`EX_AFTER_SALES_NOT_ALLOWED`**、422 参数、403 非本人。
 - 待决策点：可发起售后的**订单主态+支付态**白名单；与**退款**通道是否分单。
 - 影响页面：订单详情「售后」、客服协同。
-- 状态：**accepted**（合同 `user-api` §8；**子类型与枚举**仍为 **待决策**）
+- 状态：**implemented**（P1 最小发起；子类型与枚举仍可后续细化）
 - 关联合同：user-api §8
-- 关联代码：无（P1+）
+- 关联代码：`MeCenterController@createAfterSalesCase`、`OrderP1Service@createAfterSalesCase`、`ep` `src/app/api/orders/[orderNo]/after-sales/route.ts`、`P1AfterSalesForm`
 
 ---
 
@@ -210,9 +221,9 @@
 - 失败场景：同 001
 - 待决策点：列表**是否**默认不展开大块，仅详情展开。
 - 影响页面：订单中心、详情页、状态条。
-- 状态：**accepted**（作为 **001 的增强合同**；**P1 实现**）
+- 状态：**implemented**（订单列表/详情已返回新主链扩展块）
 - 关联合同：user-api §7
-- 关联代码：待增序列化
+- 关联代码：`OrderMainChainPresenter`、`MeCenterController@orders`、`MeCenterController@orderDetail`
 
 ---
 
@@ -229,9 +240,9 @@
 - 失败场景：403、422 绑定非法 **standardServiceCode**、审核态禁止编辑（**待决策**）。
 - 待决策点：与旧 `POST /merchant/services` 的**数据双写/迁移**顺序。
 - 影响页面：商家能力配置、任务匹配。
-- 状态：**accepted**（合同 `merchant-api` §2；**实现未上线**）
+- 状态：**implemented**（P1：后端 CRUD 与商家端最小管理页已接）
 - 关联合同：merchant-api §2
-- 关联代码：无（P1）
+- 关联代码：`MerchantPortalController` capability methods、`MerchantCapabilityService`、`YipaiMerchantCapability`、`epmerchant` `merchant/capabilities`
 
 ---
 
@@ -246,9 +257,9 @@
 - 失败场景：422 候选已 **expired**、**状态不允许**、**`EX_CANDIDATE_EXPIRED`/`EX_MQC_DUPLICATE`** 等；403 非本商。
 - 待决策点：候选过期是否自动释放下一候选；**重复提交** MQC 是否 409/422。
 - 影响页面：商家待办、报价、日历。
-- 状态：**accepted**（合同 `merchant-api` §4–5；**实现未上线**）
+- 状态：**implemented**（P1：候选列表与 MQC 提交已接）
 - 关联合同：merchant-api §4–5
-- 关联代码：无（P1）
+- 关联代码：`MerchantPortalController@orderRequests`、`MerchantPortalController@submitQuoteConfirmation`、`MerchantOrderRequestService`、`YipaiMerchantCandidate`、`YipaiMerchantQuoteConfirmation`、`epmerchant` `merchant/order-requests`
 
 ---
 
@@ -262,9 +273,9 @@
 - 失败场景：403
 - 待决策点：评分公式是否对商家可见明细。
 - 影响页面：商家我的、信任展示。
-- 状态：**accepted**（合同 `merchant-api` §8；**数据与接口可分期**）
+- 状态：**implemented**（P1 只读接口与商家端页面已接；评分数据仍可分期丰富）
 - 关联合同：merchant-api §8
-- 关联代码：无（P1+）
+- 关联代码：`MerchantPortalController@creditProfile`、`MerchantCreditProfileService`、`YipaiMerchantCreditProfile`、`YipaiMerchantCreditEvent`、`epmerchant` `merchant/credit-profile`
 
 ---
 
@@ -321,9 +332,9 @@
 - 响应字段草案：N/A
 - 失败场景：已分享旧 URL 的 301/302 与客户端回退（待产品定）。
 - 影响页面：首页、分类页、服务详情、下单、登录/资料补全的 next 参数。
-- 状态：**proposed**
+- 状态：**implemented**（P1：旧 `orders/new?serviceId=` 与 `services/[id]` 已降级为兼容提示 / 标准服务入口）
 - 关联合同：user-api §0、`docs/boundaries.md` §2
-- 关联代码：待 P1d；涉及 `ep` `src/app/[locale]/page.tsx`、`categories/[slug]/page.tsx`、`services/[id]/page.tsx`、`orders/new/page.tsx` 等
+- 关联代码：`ep` `src/app/[locale]/orders/new/page.tsx`、`src/app/[locale]/services/[id]/page.tsx`
 
 ---
 
@@ -343,14 +354,14 @@
 | 006    | requirement-template         | **implemented** |
 | 007    | quote-preview                | **implemented** |
 | 008    | POST orders 新主链            | **implemented** |
-| 009    | confirm-merchant-quote       | **accepted** |
+| 009    | confirm-merchant-quote       | **implemented** |
 | 010    | 旧/新 workflow 映射           | **implemented** |
-| 011    | after-sales                  | **accepted**（子枚举待决策） |
-| 012    | GET 订单新主链扩展块         | **accepted** |
-| 013    | merchant capabilities        | **accepted** |
-| 014    | order-requests + MQC submit  | **accepted** |
-| 015    | credit-profile               | **accepted** |
+| 011    | after-sales                  | **implemented**（子枚举可后续细化） |
+| 012    | GET 订单新主链扩展块         | **implemented** |
+| 013    | merchant capabilities        | **implemented** |
+| 014    | order-requests + MQC submit  | **implemented** |
+| 015    | credit-profile               | **implemented** |
 | 016    | availability 演进            | **proposed** |
 | 017    | GET quote-preview 旁路/幂等   | **draft**    |
 | 018    | ep BFF 对齐 standard…        | **implemented** |
-| 019    | 路由与 query 迁移            | **proposed** |
+| 019    | 路由与 query 迁移            | **implemented** |

@@ -1,6 +1,6 @@
 # 已实现 API 目录（联调真实）
 
-最后更新：2026-05-05（P1b StandardService 下单闭环）
+最后更新：2026-05-05（P1 最小交易闭环）
 
 > 仅登记**已**在**现网后端**注册、或**本文件明确**的接口状态。与 **[requests.md](requests.md)** 中**未实现**项**不得**标为 `implemented`。  
 > **图例（状态）**  
@@ -8,10 +8,10 @@
 > - **compatibility** — 现网有路由；**不**作新**用户**主入口/终局，见 `docs/boundaries.md`。  
 > - **target / planned**（合称 **planned**）— **合同已锁**、**P1 计划** 实现；**当前**不可联调。  
 
-**新主链：P1a 已接路由**（分条见下「StandardService / P1a」**；**部署须 `migrate` +** **`StandardServiceP1aSeeder`）** 与**仍** **planned** 的项**分开记**：
+**新主链：P1 已接路由**（分条见下「StandardService / P1a」与「P1 交易闭环」；部署须 `migrate` + `StandardServiceP1aSeeder` 或等价数据迁移）：
 
 - **P1a 已实现**（`expatth-backend` `routes/api.php`）：`GET/GET/GET/POST` **`/api/v1/standard-services*`**。  
-- **仍 planned**（合同在 **user-api / merchant-api**，**无** 现网路由或**无** 完整行为）：`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`、`POST /api/v1/orders/{orderNo}/after-sales`、`/api/v1/merchant/capabilities*`、`/merchant/order-requests*`、`/merchant/.../quote-confirmation`、`/merchant/credit-profile` 等。`POST /api/v1/orders` 已支持 P1b 最小新主链创建订单，但候选/MQC 子实体仍 planned。
+- **P1 已实现**：`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`、`POST /api/v1/orders/{orderNo}/after-sales`、`/api/v1/merchant/capabilities*`、`/merchant/order-requests*`、`/merchant/.../quote-confirmation`、`/merchant/credit-profile`；`POST /api/v1/orders` 已按 `MerchantCapability` 生成候选。
 
 **compatibility 小结**：**`/api/v1/services*`** 与 **`/api/v1/merchant/services*`** 在分条中均标为 **compatibility**（**非**新主链终局入口）。**旧** 粗报 **`POST /services/{id}/price-preview`** 仍为 **compatibility**；**新** 粗报以 **`POST /standard-services/{code}/quote-preview`** 为准（P1a）。
 
@@ -267,14 +267,107 @@
 
 ---
 
-## GET /api/v1/orders 与 /{orderNo} 与 子路径
+## P1 交易闭环（`implemented`）
+
+以下 **2026-05-05** 起在 `expatth-backend` 注册；数据依赖 **`yipai_merchant_capabilities` / `yipai_merchant_candidates` / `yipai_merchant_quote_confirmations` / `yipai_after_sales_cases` / `yipai_merchant_credit_profiles` / `yipai_merchant_credit_events`**。
+
+## POST /api/v1/orders/{orderNo}/confirm-merchant-quote
 
 - 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT，订单必须属于当前用户
+- 请求：`merchantQuoteConfirmationId`
+- 响应：`orderNo`、`workflowStatus=waiting_payment_or_authorization`、`legacyWorkflowStatus=pending_payment`、`nextAction=pay`、`finalAmount`、`userPayable`、`confirmedServiceTime`、`paymentRequired`
+- 实现位置：`MeCenterController@confirmMerchantQuote`、`OrderP1Service@confirmMerchantQuote`
+- 前端使用位置：`ep` 订单详情/订单中心 P1 新主链块
+
+## POST /api/v1/orders/{orderNo}/after-sales
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT，订单必须属于当前用户且状态允许
+- 请求：`caseType`、`description`、`evidence[]`
+- 响应：`caseId`、`status`、`workflowStatus=after_sales`、`legacyWorkflowStatus=after_sales`、`nextAction=view_after_sales`
+- 实现位置：`MeCenterController@createAfterSalesCase`、`OrderP1Service@createAfterSalesCase`
+- 前端使用位置：`ep` 订单详情/订单中心售后表单
+
+## GET /api/v1/merchant/capabilities
+
+- 状态：implemented
+- 调用方：商家端
+- 权限：商家 JWT
+- 请求：分页参数可选
+- 响应：`list[]`、`total`、`page`、`pageSize`
+- 实现位置：`MerchantPortalController@capabilities`、`MerchantCapabilityService`
+- 前端使用位置：`epmerchant` 能力管理页
+
+## POST /api/v1/merchant/capabilities
+
+- 状态：implemented
+- 调用方：商家端
+- 权限：商家 JWT
+- 请求：`standardServiceCode`、`enabled`、`serviceArea`、`basePricingRule`、`extraDistanceRule`、`capacityRule`、`openDates`
+- 响应：`capabilityId`、`standardServiceCode`、`enabled`、`status`、`reviewState`
+- 实现位置：`MerchantPortalController@createCapability`、`MerchantCapabilityService`
+- 前端使用位置：`epmerchant` 能力管理页
+
+## GET /api/v1/merchant/capabilities/{id}
+
+- 状态：implemented
+- 调用方：商家端
+- 权限：商家 JWT，能力必须属于当前商家
+- 响应：单条 MerchantCapability
+- 实现位置：`MerchantPortalController@capabilityDetail`、`MerchantCapabilityService`
+
+## PUT /api/v1/merchant/capabilities/{id}
+
+- 状态：implemented
+- 调用方：商家端
+- 权限：商家 JWT，能力必须属于当前商家
+- 请求：同创建能力，字段可部分更新
+- 响应：更新后的 MerchantCapability
+- 实现位置：`MerchantPortalController@updateCapability`、`MerchantCapabilityService`
+- 前端使用位置：`epmerchant` 能力管理页
+
+## GET /api/v1/merchant/order-requests
+
+- 状态：implemented
+- 调用方：商家端
+- 权限：商家 JWT
+- 请求：分页参数可选
+- 响应：候选任务 `list[]`，包含 `candidateId`、`orderNo`、`standardServiceCode`、`requirementSummary`、`quotePreview`、`serviceAddress`、`requestedAppointment`、`expiresAt`、`status`
+- 实现位置：`MerchantPortalController@orderRequests`、`MerchantOrderRequestService`
+- 前端使用位置：`epmerchant` 商家待办页
+
+## POST /api/v1/merchant/order-requests/{candidateId}/quote-confirmation
+
+- 状态：implemented
+- 调用方：商家端
+- 权限：商家 JWT，候选必须属于当前商家
+- 请求：`finalAmount`、`confirmedServiceTime`、可选 `merchantNote`、`validUntil`
+- 响应：`merchantQuoteConfirmationId`、`candidateId`、`orderNo`、`status=submitted`、`workflowStatus=waiting_user_confirmation`、`nextAction=confirm_merchant_quote`
+- 实现位置：`MerchantPortalController@submitQuoteConfirmation`、`MerchantOrderRequestService`
+- 前端使用位置：`epmerchant` 商家待办页
+
+## GET /api/v1/merchant/credit-profile
+
+- 状态：implemented
+- 调用方：商家端
+- 权限：商家 JWT
+- 响应：`score`、`level`、`badges`、`lastUpdatedAt`、`events[]`
+- 实现位置：`MerchantPortalController@creditProfile`、`MerchantCreditProfileService`
+- 前端使用位置：`epmerchant` 信用档案页
+
+---
+
+## GET /api/v1/orders 与 /{orderNo} 与 子路径
+
+- 状态：implemented（P1 已追加新主链扩展块）
 - 调用方：用户端
 - 权限：用户 JWT
 - 请求：路径 `orderNo`
 - 主要接口：`GET /orders`、`GET /orders/{orderNo}`、`POST /orders/{orderNo}/cancel`、`hide-from-list`、`confirm-completion`、`GET /orders/{orderNo}/my-review`
-- 实现位置：`MeCenterController` 等
+- 实现位置：`MeCenterController`、`OrderMainChainPresenter` 等
 - 前端使用位置：订单中心
 
 ---
