@@ -1,17 +1,18 @@
 # 用户端 API 合同（User API Contract）
 
-最后更新：2026-04-28（P0.5 合同 + **P1a 标准服务/模板/粗报价 已实现** 同步）
+最后更新：2026-05-05（P1b StandardService 创建订单可联调）
 
 > 本文档只描述**用户端开放 HTTP API 的合同形态**（路径、方向、核心字段、兼容策略）。**需求池与缺口**见 **`api/requests.md`（唯一）**；**不得**在本文档承担需求池职责。历史 `docs/api-user-request.md` 不维护。  
 > 业务词表与七词定义见 `docs/glossary.md`；平台边界见 `docs/boundaries.md`。  
 > 目标订单主态见 `docs/state-machine.md`；履约顺序见 `docs/fulfillment-flow.md`；**错误语义**见 `api/error-codes.md`。
 
-## 0.1 P0.5 实现状态与联调（必读）
+## 0.1 P1b 实现状态与联调（必读）
 
 - **可联调、且**路由已在**现网**后端注册的项：以 **`api/registry.md`** 中标记为 **`implemented`** 或**明确**列出的 **compatibility** 为准。  
 - **P1a 已**在 **`/api/v1/standard-services*`** 落**列表、详情、**`requirement-template`**、**`POST …/quote-preview`**（`yipai_quote_previews` 落库；计价接 `YipaiServiceProcessTemplate` 与 `ServiceProcessPricingService`）**；部署后**须执行 `php artisan migrate` 与 `php artisan db:seed --class=StandardServiceP1aSeeder`（**或** 等价数据迁移）以**有**标准行与 `formSchema`。  
-- 以下新主链**仍**未在现网**实现**（**仅**合同/需求）：**`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`**、**`POST /api/v1/orders/{orderNo}/after-sales`（子域枚举见 requests）**、**`POST /api/v1/orders` 的 §4 新** body 主路径**。  
-- **老**的 **`GET/POST /orders*`**、**`POST /payments/intent`** 与 **`POST /orders` 的 §10 旧**入参**可** 继续联调；**§4** 新体为**目标**合同。  
+- **P1b 已**让 **`POST /api/v1/orders` 的 §4 新 body 主路径**可联调：请求可用 `standardServiceCode + quotePreviewId + requirementPayload + serviceAddress`，响应包含目标 `workflowStatus`、迁移期 `legacyWorkflowStatus` 与 `nextAction`。
+- 以下新主链**仍**未在现网**实现**（**仅**合同/需求）：**`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`**、**`POST /api/v1/orders/{orderNo}/after-sales`（子域枚举见 requests）**、MerchantCandidate / MerchantQuoteConfirmation 的商家侧处理链路。
+- **老**的 **`GET/POST /orders*`**、**`POST /payments/intent`** 与 **`POST /orders` 的 §10 旧**入参**可** 继续联调；旧 `serviceId` 路线只作 compatibility，不作为新用户主入口。
 - 已注册辅助清单（**未**含全部路由）：`GET/GET/GET/POST` 见 **`api/registry`「StandardService / P1a」** 分条。  
 - **`nextAction`**：仅 **UI 引导**（`state-machine` **§6**），**不**是独立**主**状态，**不**能替代 **`workflowStatus`** 做**支付/权限**判定。  
 - **P1 增强**（已接受需求）：`GET /api/v1/orders`、`GET /api/v1/orders/{orderNo}` 的 **`data` 新主链扩展块** 见 **R-20260428-012**。
@@ -101,7 +102,7 @@
 
 - **POST** `/api/v1/orders`
 
-**新主流程请求体（核心字段，目标合同）**：
+**新主流程请求体（核心字段，P1b 可联调）**：
 
 | 字段 | 说明 |
 |------|------|
@@ -123,7 +124,7 @@
 | `matchingStatus` | 与 **MerchantCandidate** 匹配阶段相关的状态。 |
 | `nextAction` | 客户端可引导的下一动作（展示层提示，**非**自定义状态机）。 |
 
-**`matchingStatus` / `nextAction` 的枚举值、与现网 `workflow_status` 的映射、以及响应 JSON 的精确定义**在 **`api/requests.md`** R-20260428-010、R-20260428-017 跟踪；**本合同只保留方向性字段名**，实现级 Schema 以联调与需求池为准。
+**`matchingStatus` / `nextAction` 的枚举值、与现网 `workflow_status` 的映射、以及响应 JSON 的精确定义**在 **`api/requests.md`** R-20260428-010、R-20260428-012 跟踪；**本合同只保留方向性字段名**，实现级 Schema 以联调与需求池为准。
 
 **兼容（compatibility）**：见 **§10.3**；在 **P1** 之前，现网可能仍支持基于 **`serviceId`** 的旧入参路径，**不作为新流程合同主路径**。
 
@@ -143,7 +144,7 @@
 |------|------|
 | `merchantQuoteConfirmationId` | 商家侧 **MerchantQuoteConfirmation** 记录 id。 |
 
-**幂等、可重复提交、与 `MerchantQuoteConfirmation.status` 的门禁**在 **`api/requests.md`** R-20260428-008 跟踪，本文档不单独约定。
+**幂等、可重复提交、与 `MerchantQuoteConfirmation.status` 的门禁**在 **`api/requests.md`** R-20260428-009 跟踪，本文档不单独约定。
 
 **响应（核心字段）**：
 
@@ -163,7 +164,7 @@
 
 - **POST** `/api/v1/payments/intent`
 
-**合同地位**：保留现网 **支付意图** 创建入口；用户端在需付款时创建 intent，**金额与可付性**以 **`GET /api/v1/orders/{orderNo}`** 及订单状态门禁为准（与现网 **api-user-list** 一致方向）。
+**合同地位**：保留现网 **支付意图** 创建入口；用户端在需付款时创建 intent，**金额与可付性**以 **`GET /api/v1/orders/{orderNo}`** 及订单状态门禁为准（与 **api/registry.md** 已实现状态一致）。
 
 **请求体（现网习惯，方向性）**：至少 **`orderNo`**、**`method`**（如 `wallet` 等，以现网为准）。
 
@@ -177,7 +178,7 @@
 
 - **GET** `/api/v1/orders`
 
-**用途**：当前用户订单列表；筛选、分页、展示字段以现网及 **api-user-list** 为准；需包含与评价、完成确认、隐藏等相关的展示位（如 `hasMyReply`、`overtimeNoComment` 等，见现网清单）。
+**用途**：当前用户订单列表；筛选、分页、展示字段以现网及 **api/registry.md** 为准；需包含与评价、完成确认、隐藏等相关的展示位（如 `hasMyReply`、`overtimeNoComment` 等，见现网清单）。
 
 ### 7.2 详情
 
@@ -217,7 +218,7 @@
 
 - **POST** `/api/v1/reviews`
 
-**用途**：订单达到可评状态后，用户对商家评价；主评/追评、图片等以现网及 **api-user-list** 为准。
+**用途**：订单达到可评状态后，用户对商家评价；主评/追评、图片等以现网及 **api/registry.md** 为准。
 
 ### 9.2 我的评价
 

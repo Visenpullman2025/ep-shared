@@ -95,9 +95,9 @@
 - 失败场景：404 `code` 不存在或已下线；401 仅当某环境要求登录（默认访客可读则无）。
 - 待决策点：下线路径用 **HTTP 404** 与 **410** 二选一；列表是否返回未开放项给管理态 BFF（若需要则另需 admin 合同）。
 - 影响页面：首页、类目、标准服务落地页。
-- 状态：**accepted**（合同见 `user-api` §1；**实现未上线**前不可当联调完成）
+- 状态：**implemented**（P1a：`GET /api/v1/standard-services*` 已登记在 `api/registry.md`）
 - 关联合同：user-api §1
-- 关联代码：无（P1）
+- 关联代码：`StandardServiceController@index`、`StandardServiceController@show`
 
 ---
 
@@ -111,9 +111,9 @@
 - 失败场景：404 标准服务不存在；422 无可用模板版本。
 - 待决策点：多版本并存时默认拉「当前 published」规则；与现网 `form_schema` 的字段名迁移映射表在 P1 由后端给出。
 - 影响页面：需求填写、校验。
-- 状态：**accepted**（合同 `user-api` §2）
+- 状态：**implemented**（P1a：`GET /api/v1/standard-services/{code}/requirement-template` 已登记在 `api/registry.md`）
 - 关联合同：user-api §2
-- 关联代码：无（P1）
+- 关联代码：`StandardServiceController@requirementTemplate`
 
 ---
 
@@ -127,9 +127,9 @@
 - 失败场景：422 **RequirementPayload** 与模板不合（见 `EX_REQUIREMENT_PAYLOAD_INVALID`）；**404** 标准服务不存在；401 若策略要求登录后询价（**待决策**）。
 - 待决策点：未登录可询价时风控与限流；与旧路双写/覆盖策略。
 - 影响页面：下单前估价、重入恢复。
-- 状态：**accepted**（合同 `user-api` §3）
+- 状态：**implemented**（P1a：`POST /api/v1/standard-services/{code}/quote-preview` 已登记在 `api/registry.md`）
 - 关联合同：user-api §3
-- 关联代码：无；旧参考 `ServiceProcessTemplateController@servicePricePreview`（**compatibility**）
+- 关联代码：`StandardServiceController@quotePreview`、`StandardServicePreviewService`；旧参考 `ServiceProcessTemplateController@servicePricePreview`（**compatibility**）
 
 ---
 
@@ -315,7 +315,7 @@
 ## R-20260428-019 用户端路由与 query 从 `serviceId` 迁移为 `standardServiceCode`
 
 - 来源角色：User Frontend / 产品
-- 背景：expath 现用 `src/app/[locale]/services/[id]/page`、`orders/new?serviceId=`，与 **boundaries** 新主入口 `standardServiceCode` 冲突；Oauth/login `next` 与 profile 补全深链也携带旧 query。
+- 背景：`ep` 旧入口使用 `src/app/[locale]/services/[id]/page`、`orders/new?serviceId=`，与 **boundaries** 新主入口 `standardServiceCode` 冲突；Oauth/login `next` 与 profile 补全深链也携带旧 query。
 - 需要的信息架构：统一目标路径与 query 命名（**选一种**：如 `/[locale]/standard-services/[code]` 或**保留** `/services/[id]` 仅作重定向/别名）；`orders/new` 的 `searchParams` 迁为 `standardServiceCode`（`serviceId` 在并存期内 deprecated）；全站 `href` / `router` / `next` 重定向表。
 - 请求字段草案：N/A
 - 响应字段草案：N/A
@@ -323,7 +323,7 @@
 - 影响页面：首页、分类页、服务详情、下单、登录/资料补全的 next 参数。
 - 状态：**proposed**
 - 关联合同：user-api §0、`docs/boundaries.md` §2
-- 关联代码：待 P1；涉及 `expath` `src/app/[locale]/page.tsx`、`categories/[slug]/page.tsx`、`services/[id]/page.tsx`、`orders/new/page.tsx` 等
+- 关联代码：待 P1d；涉及 `ep` `src/app/[locale]/page.tsx`、`categories/[slug]/page.tsx`、`services/[id]/page.tsx`、`orders/new/page.tsx` 等
 
 ---
 
@@ -335,16 +335,16 @@
 
 ---
 
-## P0.5 状态总览（005–019，便于检索）
+## P1b 状态总览（005–019，便于检索）
 
 | R-     | 简述                         | 状态         |
 |--------|------------------------------|--------------|
-| 005    | 标准服务列表+详情            | **accepted** |
-| 006    | requirement-template         | **accepted** |
-| 007    | quote-preview                | **accepted** |
-| 008    | POST orders 新主链            | **accepted** |
+| 005    | 标准服务列表+详情            | **implemented** |
+| 006    | requirement-template         | **implemented** |
+| 007    | quote-preview                | **implemented** |
+| 008    | POST orders 新主链            | **implemented** |
 | 009    | confirm-merchant-quote       | **accepted** |
-| 010    | 旧/新 workflow 映射           | **proposed** |
+| 010    | 旧/新 workflow 映射           | **implemented** |
 | 011    | after-sales                  | **accepted**（子枚举待决策） |
 | 012    | GET 订单新主链扩展块         | **accepted** |
 | 013    | merchant capabilities        | **accepted** |
@@ -352,5 +352,5 @@
 | 015    | credit-profile               | **accepted** |
 | 016    | availability 演进            | **proposed** |
 | 017    | GET quote-preview 旁路/幂等   | **draft**    |
-| 018    | expath BFF 对齐 standard…    | **proposed** |
+| 018    | ep BFF 对齐 standard…        | **implemented** |
 | 019    | 路由与 query 迁移            | **proposed** |

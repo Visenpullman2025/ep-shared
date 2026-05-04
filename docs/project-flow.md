@@ -1,23 +1,47 @@
 # 项目流程与设定（公共）
 
-最后更新：2026-03-30（维护约定：Linear 已弃用；用户端对后端需求见 **api-user-request.md**，商户见 **api-merchant-request.md**）
+最后更新：2026-05-05（Topcheck：main 主线已接 P1b，下一步进入候选与商家确认单）
 
 > 本文件用于团队内部统一说法、对外展示业务设定与从询价到评价的主要步骤，不替代接口契约。  
-> **接口字段与状态**：用户/公共见 [api-user-list.md](api-user-list.md)，商户见 [api-merchant-list.md](api-merchant-list.md)，并与后端代码一致；**需求与差异**见 [api-user-request.md](api-user-request.md)（用户端）、[api-merchant-request.md](api-merchant-request.md)（商户端）。**路径更名对照**见 [frontend-api-renames.md](frontend-api-renames.md)。用户订单接口为 **`/api/v1/orders*`**（需 JWT）；认证由中间件保证。
+> **接口合同与状态**：用户端见 [../api/user-api.md](../api/user-api.md)，商家端见 [../api/merchant-api.md](../api/merchant-api.md)，已实现接口见 [../api/registry.md](../api/registry.md)；**需求与差异**统一写入 [../api/requests.md](../api/requests.md)。**路径更名对照**见 [frontend-api-renames.md](frontend-api-renames.md)。用户订单接口为 **`/api/v1/orders*`**（需 JWT）；认证由中间件保证。
 
 ## 当前重点与待办
 
-**阶段结论（一句话）**：从询价、下单、商户与用户侧订单状态变化到评价，接口与状态见 **api-user-list** / **api-merchant-list**；商户配置开放日后，**预约日在圈外**的订单须商家确认后才可付款；其余场景支付规则见上述清单。
+**Topcheck 结论（一句话）**：项目已经从“前端页面重构 + API 合同补齐”进入 **P1b 可联调阶段**：用户端可以从 **StandardService → RequirementPayload → QuotePreview → 创建订单** 走通；下一步最高杠杆不是继续补页面，而是实现 **MerchantCandidate + MerchantQuoteConfirmation**，让订单从 `waiting_merchant_confirmation` 继续走到用户确认和支付。
 
-### 待办清单（勾选即表示已完成）
+### 当前已完成的主线事实
 
-- [ ] 商家评价客户接口（如 `POST /api/v1/merchant/reviews`，见 api-merchant-request）
-- [ ] 商户订单列表补齐 `customerAvatar` / `customerRating` 等展示字段（可选二期）
-- [ ] 支付与资金「冻结至完结」若与现网结算不一致，单独排期，让产品说明与后端实现一致
+- [x] `ep` 主仓库已推送到 `main`：标准服务报价页可用 `quotePreviewId` 创建订单；favorites 假入口和静态分类兜底已清理。
+- [x] `epbkend` 主仓库已推送到 `main`：`POST /api/v1/orders` 支持 `standardServiceCode + quotePreviewId`，订单响应返回目标 `workflowStatus`、`legacyWorkflowStatus`、`nextAction`。
+- [x] `ep-shared` 已推送到当前默认 `master`：`PROJECT_RULES.md`、状态机、`api/requests.md`、`api/registry.md` 与边界文档已同步。
+- [x] `epmerchant` 主仓库已推送到 `main`：同步项目规则入口；尚未进入 MerchantCapability / MQC 页面实现。
 
-> **细则与历史条目**分见 [api-user-request.md](api-user-request.md)、[api-merchant-request.md](api-merchant-request.md)；此处仅保留**跨角色可见的少量条目**。
+### 下一步任务队列
 
-**维护**：完成项改为 `- [x]`，并更新文件顶部「最后更新」；新增阶段级待办时从对应 request 文件「当前需求区」提炼写入，不复制全文。
+#### P1c - 商家候选与确认单最小闭环
+
+- 范围：`ep-shared`、`epbkend/expatth-backend`、`epmerchant`、`ep`。
+- 目标：订单创建后生成或进入 **MerchantCandidate**，商家在 **MerchantQuoteConfirmation** 提交最终金额和服务时间，用户确认后订单进入 `waiting_payment_or_authorization`。
+- shared：冻结 R-009、R-013、R-014 的字段、错误码、状态推进条件；明确 `candidateStatus`、`mqcStatus` 与订单 `workflowStatus` 的关系。
+- 后端：新增候选/确认单表、模型、服务、路由；实现 `GET /api/v1/merchant/order-requests`、`POST /api/v1/merchant/order-requests/{candidateId}/quote-confirmation`、`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`。
+- 商家端：新增商家待办入口，展示候选单并提交最终价与服务时间。
+- 用户端：订单详情/订单中心展示 `waiting_user_confirmation`，提供确认商家报价入口。
+- 验收：后端 route/test 通过；`ep` 与 `epmerchant` lint/build 通过；浏览器走通“下单 → 商家确认 → 用户确认 → 等支付”。
+
+#### P1d - 旧 `serviceId` 用户入口降级
+
+- 范围：`ep` 为主，必要时同步 `ep-shared`。
+- 目标：用户新主线不再从 `/services/[id]` 和 `orders/new?serviceId=` 进入；旧链接只做兼容提示或重定向。
+- 不做：不删除后端 compatibility 路由，直到商家能力和旧数据迁移有替代路径。
+- 验收：`rg "orders/new\\?serviceId|serviceId"` 只剩兼容层；新入口全部使用 `standardServiceCode`。
+
+#### P1e - 本地运行与依赖卫生
+
+- 范围：`epbkend/expatth-backend`。
+- 目标：消除 main 后端本地运行的环境噪声：缺 `.env`、PHP 8.5 与 `phpoffice/phpspreadsheet` 平台约束、Dcat deprecated 输出。
+- 验收：不用 `--ignore-platform-req=php` 也能 `composer install`；`composer test` 不需要临时 `APP_KEY`；无 vendor deprecation 污染测试输出。
+
+> **维护**：完成项改为 `- [x]`，并更新文件顶部「最后更新」；阶段任务若涉及 HTTP 合同，必须同步 `api/requests.md`，已实现后同步 `api/registry.md`。
 
 ---
 
@@ -29,7 +53,7 @@
 | 用户端 API 前缀 | `/api/v1/`（认证、个人中心、公共分类/服务/订单等） |
 | 商户端 API 前缀 | `/api/v1/merchant/*`（商家端页面默认只走此前缀，除非契约标明公共接口） |
 | 运营后台 | Dcat Admin（Laravel），与开放 API 分离 |
-| 文档分工 | **api-user-list** / **api-merchant-list**：接口状态；**api-user-request** / **api-merchant-request**：需求池；**frontend-api-renames**：路径更名；**本文**：端到端步骤与轻量待办 |
+| 文档分工 | **api/user-api.md** / **api/merchant-api.md**：合同；**api/registry.md**：已实现接口；**api/requests.md**：唯一需求池；**frontend-api-renames**：路径更名；**本文**：端到端步骤与轻量待办 |
 
 ### 1.1 客户端统一视觉风格（expath-frontend · Thai × Apple Glass）
 
@@ -57,7 +81,7 @@
 
 1. **注册**：`POST /api/v1/auth/register`（客户角色；商户需走商户注册接口）。
 2. **登录**：`POST /api/v1/auth/login`。
-3. **当前用户**：`GET /api/v1/auth/me`（基础信息、钱包摘要、资料扩展字段等，以 **api-user-list** 为准）。
+3. **当前用户**：`GET /api/v1/auth/me`（基础信息、钱包摘要、资料扩展字段等，以 **api/registry.md** 与后端实现为准）。
 
 ---
 
@@ -66,9 +90,9 @@
 **目标**：满足下单与展示所需的最小资料（手机号、头像昵称、地址与门牌、地图选点）。
 
 1. **资料读写**：`GET /api/v1/me/profile`、`POST /api/v1/me/profile`（如手机、头像、昵称等，只读项以后端为准）。
-2. **地址簿**：`GET /api/v1/me/addresses`、`POST /api/v1/me/addresses`、`PUT /api/v1/me/addresses/{addressId}`、`POST /api/v1/me/addresses/{addressId}/default`（支持默认地址、门牌图、经纬度可空等，见 **api-user-list**）。
+2. **地址簿**：`GET /api/v1/me/addresses`、`POST /api/v1/me/addresses`、`PUT /api/v1/me/addresses/{addressId}`、`POST /api/v1/me/addresses/{addressId}/default`（支持默认地址、门牌图、经纬度可空等，见 **api/registry.md**）。
 3. **地图配置（前端）**：`GET /api/v1/maps/config`（如 Google Maps Key、允许国家等，依赖环境变量）。
-4. **图片上传**：`GET /api/v1/uploads/oss-policy?scene=...`（头像、门牌照等 scene 名见 **api-user-list**）。
+4. **图片上传**：`GET /api/v1/uploads/oss-policy?scene=...`（头像、门牌照等 scene 名见 **api/registry.md**）。
 
 ---
 
@@ -76,18 +100,18 @@
 
 **目标**：从浏览服务到成交、服务履约、确认与评价（与运营/商户侧状态机一致）。
 
-1. **进入服务**：`GET /api/v1/services/{id}` 获取基础信息与流程相关 URL（若有返回）。
-2. **询价表单定义**：`GET /api/v1/services/{id}/create-data`（`formSchema.fields[]` 由 admin 模板下发）。
-3. **粗略报价**：`POST /api/v1/services/{id}/price-preview`（入参含 `processData`、可选 `serviceAddress`；**金额以后端返回为准**，前端不自行算总价）。
-4. **流程摘要展示（可选）**：`GET /api/v1/services/{id}/summary`（步骤/状态文案统一口径）。
-5. **预约日（规划能力，与 api-user-request / api-merchant-request 中开放日、bookable-days 相关说明一致）**：客户在下单前从服务端拉取 **可预约日历日**（推荐 `GET /api/v1/services/{serviceId}/bookable-days?from=YYYY-MM-DD&to=YYYY-MM-DD`，含端点；可覆盖「本月末 + 下月初」等跨月范围）。返回的 `bookable: true` 表示该日仍在 **商户开放日** 内且 **尚未被任一已付款订单占用该商户该日**。
-6. **提交订单**：`POST /api/v1/orders`（保存 `processData`、`pricingSnapshot`、`quotedAmount` 等，并携带与预约一致的 **日历日** 信息：`appointmentDate` 或规范化后的 `appointmentTime`，以后端为准）。若所选日在开放且可预约规则内，响应可出现 **`merchantAutoConfirmed: true`** 并写入 **`confirmedServiceTime`**，等价于跳过「商家人工确认时间」；否则首态仍为 **待商家确认** `pending_merchant_confirm`（见 **api-user-list**）。
-7. **支付**：`POST /api/v1/payments/intent` 等。**先付款锁定当日**：同一商户、同一日历日允许多笔待付款并存（产品可改为全日一单待付，见 **api-user-request**）；**付款成功瞬间**后端对该 **商户 + 日** 原子占用，该单走自动商家确认路径；**其他客户**再付同日订单可能 **409/422** 或需改期。付款成功后，**新用户**在 `bookable-days` 中不再看到该日（对客「下架」）；**不要求**商户端月历自动取消绿格（开放日配置与占用分离）。支付在本阶段可为兼容能力；是否会拦住后续步骤以 **api-user-list** 为准。
-8. **商户侧推进**：推荐 `POST /api/v1/merchant/orders/{orderNo}/confirm`（接单）、`.../start-service`（开始服务）、`.../finish-service`（商家完工）、`.../cancel`（取消）；兼容旧 `.../transition` + `targetStatus`（见 **api-merchant-list**）。**开始服务需客户已付款**等规则见 **api-merchant-list**。若下单响应已 **`merchantAutoConfirmed`**，则「商家人工确认时间」已等价完成，后续仍按状态机推进。
+1. **进入标准服务**：`GET /api/v1/standard-services`、`GET /api/v1/standard-services/{code}`。用户端主键为 **`standardServiceCode`**；`GET /api/v1/services/{id}` 只保留 compatibility。
+2. **需求表单定义**：`GET /api/v1/standard-services/{code}/requirement-template`，前端按 **RequirementTemplate** 渲染字段。
+3. **粗略报价**：`POST /api/v1/standard-services/{code}/quote-preview`，入参为 **RequirementPayload** 与 `serviceAddress`，返回 **`quotePreviewId`**。
+4. **提交订单**：`POST /api/v1/orders`，新主体为 **`standardServiceCode + quotePreviewId + requirementPayload + serviceAddress`**；后端写入订单快照并返回 `workflowStatus`、`legacyWorkflowStatus`、`nextAction`。
+5. **商家候选与确认（下一步 P1c）**：订单进入 `waiting_merchant_confirmation` 后，应生成或处理 **MerchantCandidate**；商家通过 **MerchantQuoteConfirmation** 提交最终金额和服务时间。
+6. **用户确认商家报价（下一步 P1c）**：用户调用 `POST /api/v1/orders/{orderNo}/confirm-merchant-quote` 后，订单进入 `waiting_payment_or_authorization`。
+7. **支付**：`POST /api/v1/payments/intent` 等。**先付款锁定当日**：同一商户、同一日历日允许多笔待付款并存（产品可改为全日一单待付，见 **api/requests.md**）；**付款成功瞬间**后端对该 **商户 + 日** 原子占用，该单走自动商家确认路径；**其他客户**再付同日订单可能 **409/422** 或需改期。付款成功后，**新用户**在 `bookable-days` 中不再看到该日（对客「下架」）；**不要求**商户端月历自动取消绿格（开放日配置与占用分离）。支付在本阶段可为兼容能力；是否会拦住后续步骤以 **api/registry.md** 和后端实现为准。
+8. **商户侧推进**：推荐 `POST /api/v1/merchant/orders/{orderNo}/confirm`（接单）、`.../start-service`（开始服务）、`.../finish-service`（商家完工）、`.../cancel`（取消）；兼容旧 `.../transition` + `targetStatus`（见 **api/registry.md**）。**开始服务需客户已付款**等规则见 **api/merchant-api.md** 与后端实现。若下单响应已 **`merchantAutoConfirmed`**，则「商家人工确认时间」已等价完成，后续仍按状态机推进。
 9. **用户侧推进**：客户确认服务完成走 **`POST /api/v1/orders/{orderNo}/confirm-completion`**（仅可选 body `remark`）；须登录且订单属于当前用户。列表/详情为 **`GET /api/v1/orders`**、**`GET /api/v1/orders/{orderNo}`**（均需用户 JWT；不再提供未登录订单详情）。
-10. **评价**：`POST /api/v1/reviews`（用户评商家；可选广场联动字段见 **api-user-list** / **api-user-request**）。商户评客户见 **§4.2** 与 **api-merchant-request**。
+10. **评价**：`POST /api/v1/reviews`（用户评商家；可选广场联动字段见 **api/registry.md** / **api/requests.md**）。商户评客户见 **§4.2** 与 **api/requests.md**。
 
-**业务顺序（与 api-user-request「当前统一业务流程」一致）**：浏览 → 填询价 → 报价 → **（规划）在 `bookable-days` 范围内选预约日** → 下单（可能 **自动商家确认** 或 **待商家确认**）→ 客户支付（**先付款者锁定该日历日**；资金策略见后端实现）→ 上门 → 商家完成 → 客户确认完成 → 评价与后续分发。
+**业务顺序（与 `api/requests.md` 与 `docs/state-machine.md` 一致）**：浏览 → 填询价 → 报价 → **（规划）在 `bookable-days` 范围内选预约日** → 下单（可能 **自动商家确认** 或 **待商家确认**）→ 客户支付（**先付款者锁定该日历日**；资金策略见后端实现）→ 上门 → 商家完成 → 客户确认完成 → 评价与后续分发。
 
 ### 4.1 订单金额谁说了算（下单瞬间由后端写死）
 
@@ -108,11 +132,11 @@
 
 ### 4.2 客户确认完成与互评（用户端已实现范围）
 
-1. 商家将订单置为 **`merchant_done`**（商家侧 `finish-service` / `merchantDone`）且客户**已付款**后，客户在订单中心点击**确认服务完成**：经 BFF 代理上游 **`POST /api/v1/orders/{orderNo}/confirm-completion`**（仅可选 `remark`），目标态 **`customer_completed`**（见 **api-user-list**）。
+1. 商家将订单置为 **`merchant_done`**（商家侧 `finish-service` / `merchantDone`）且客户**已付款**后，客户在订单中心点击**确认服务完成**：经 BFF 代理上游 **`POST /api/v1/orders/{orderNo}/confirm-completion`**（仅可选 `remark`），目标态 **`customer_completed`**（见 **api/user-api.md** 与 **docs/state-machine.md**）。
 2. 确认后订单进入可评价阶段；用户通过 **`POST /api/reviews`**（BFF `POST /api/reviews`）提交对商家的评分与文字评价。
 3. **对商户隐藏身份**：单一布尔 **`hideForSeller`**（非技术匿名，仅展示策略）。
-4. **可选转发广场**：用户可勾选将摘要同步到广场；**转发文案仅允许订单号 + 实付金额 + 用户评语**，不得包含地址、电话、备注等隐私字段（由前端拼 `squareBlurb` 或后端代拼，见 **api-user-request**）。可选 **`squarePublishAnonymous`** 控制广场作者匿名展示。
-5. **商户评价客户**：不在本仓库实现 UI；商户端应在订单完结后调用建议接口 **`POST /api/v1/merchant/reviews`**（字段与用户侧对称），详见 **api-merchant-request**。
+4. **可选转发广场**：用户可勾选将摘要同步到广场；**转发文案仅允许订单号 + 实付金额 + 用户评语**，不得包含地址、电话、备注等隐私字段（由前端拼 `squareBlurb` 或后端代拼，见 **api/requests.md**）。可选 **`squarePublishAnonymous`** 控制广场作者匿名展示。
+5. **商户评价客户**：不在本仓库实现 UI；商户端应在订单完结后调用建议接口 **`POST /api/v1/merchant/reviews`**（字段与用户侧对称），详见 **api/requests.md**。
 
 ---
 
@@ -123,28 +147,28 @@
 1. **注册 / 登录**：`POST /api/v1/merchant/auth/register`、`POST /api/v1/merchant/auth/login`；`GET /api/v1/merchant/auth/me`。
 2. **资料与审核状态**：`GET /api/v1/merchant/profile`（含 `merchantStatus`、`serviceTypes`、`boundServiceCategories` 等）；`POST /api/v1/merchant/profile` 可更新资料及 **`serviceTypes` 绑定分类**（创建服务前通常必须先绑定）。
 3. **类目与模板**：`GET /api/v1/merchant/categories`（含可选模板、默认模板、`selected` 等）；选中模板后 `GET /api/v1/merchant/process-templates/{templateCode}` 拉取报价项与表单字段（**不要前端写死计费枚举**，以后端为准）。
-4. **创建 / 编辑服务**：`POST /api/v1/merchant/services`、`PUT /api/v1/merchant/services/{serviceId}`（`categoryCode` 须已绑定商户；`processTemplateCode` 须属于该分类）；列表与详情 `GET /api/v1/merchant/services`、`GET /api/v1/merchant/services/{serviceId}`（含 `reviewState`、编辑器配置等）。若后端启用 AI 翻译（`GEMINI_API_KEY` 等），保存时以**请求 `locale` 为发布语言**，向另外两种语言补全 `title_i18n` / `description_i18n`（细节见 **api-merchant-list**）。
-5. **上架与审核展示**：以前端读取 `reviewState` / `status` 等字段展示「审核中 / 已上架 / 驳回」等（见 **api-merchant-list**）。
-6. **可预约开放日（总览月历）**：商户在商家端总览维护 **开放日** `openDates`（按自然日 `YYYY-MM-DD`，默认曼谷时区）；`GET` / `PUT /api/v1/merchant/availability`（经 BFF `/api/merchant/availability`）。对客户展示的 **可预约日** 由后端按「开放日 − 已付款占用日」通过 `bookable-days` 等接口返回；**占用与开放日配置分离**，不要求商户月历因他人付款自动变灰。与客户端选日、先付款锁日、自动商家确认衔接见 **§4** 与 **api-user-request** / **api-merchant-request** 中开放日相关说明。
+4. **创建 / 编辑服务**：`POST /api/v1/merchant/services`、`PUT /api/v1/merchant/services/{serviceId}`（`categoryCode` 须已绑定商户；`processTemplateCode` 须属于该分类）；列表与详情 `GET /api/v1/merchant/services`、`GET /api/v1/merchant/services/{serviceId}`（含 `reviewState`、编辑器配置等）。若后端启用 AI 翻译（`GEMINI_API_KEY` 等），保存时以**请求 `locale` 为发布语言**，向另外两种语言补全 `title_i18n` / `description_i18n`（细节见 **api/merchant-api.md** 与 **api/registry.md**）。
+5. **上架与审核展示**：以前端读取 `reviewState` / `status` 等字段展示「审核中 / 已上架 / 驳回」等（见 **api/registry.md**）。
+6. **可预约开放日（总览月历）**：商户在商家端总览维护 **开放日** `openDates`（按自然日 `YYYY-MM-DD`，默认曼谷时区）；`GET` / `PUT /api/v1/merchant/availability`（经 BFF `/api/merchant/availability`）。对客户展示的 **可预约日** 由后端按「开放日 − 已付款占用日」通过 `bookable-days` 等接口返回；**占用与开放日配置分离**，不要求商户月历因他人付款自动变灰。与客户端选日、先付款锁日、自动商家确认衔接见 **§4** 与 **api/requests.md** 中开放日相关说明。
 
-**推荐接入顺序（与 api-merchant-request 摘要一致）**：`merchant/profile` → `merchant/categories` → 若未绑定则 `POST merchant/profile` 写 `serviceTypes` → 选模板、填价项 → `POST merchant/services` → 用返回中的 `createDataUrl` / `summaryUrl` / `pricePreviewUrl` 衔接客户端询价链路。
+**推荐接入顺序（兼容旧 merchant services）**：`merchant/profile` → `merchant/categories` → 若未绑定则 `POST merchant/profile` 写 `serviceTypes` → 选模板、填价项 → `POST merchant/services` → 用返回中的 `createDataUrl` / `summaryUrl` / `pricePreviewUrl` 衔接客户端询价链路。新主线能力配置见 **api/requests.md** R-013。
 
 ---
 
 ## 6. 商户订单操作要点（与列表字段）
 
-- 列表：`GET /api/v1/merchant/orders` 提供订单卡片字段、**`pricing`（amount / taxFee / flatFee / total / merchantSettlement）** 及 **`paymentStatus`、`customerPaid`、`canMerchantStartService`** 等，供前端按钮禁用/提示（见 **api-merchant-list**）。用户侧列表 **`GET /api/v1/orders`** 使用同一套 `pricing` 结构。
-- 流转：推荐 **`confirm` / `start-service` / `finish-service` / `cancel`**（见 **api-merchant-list**）；兼容 `transition`。服务中取消可能触发**钱包扣罚**等，响应字段与多语言错误见 **api-merchant-list** 与后端 `lang/*/merchant_api.php`。
-- **自动商家确认**：客户在开放且可预约日内下单且后端返回 **`merchantAutoConfirmed`** 时，订单已带 **`confirmedServiceTime`**，商户侧仍按同一状态机操作，但可减少「单独确认服务时间」这一人工环节（以后端实现与 **api-user-list** / **api-merchant-list** 为准）。
-- **互评（商户端待接入）**：在客户确认完成、订单达 **`customer_completed`** 后，商户端应提供对客户的评价入口；接口建议 **`POST /api/v1/merchant/reviews`**，支持与用户侧相同的 **`hideForSeller`、可选转发广场** 等字段（见 **api-merchant-request**）。
+- 列表：`GET /api/v1/merchant/orders` 提供订单卡片字段、**`pricing`（amount / taxFee / flatFee / total / merchantSettlement）** 及 **`paymentStatus`、`customerPaid`、`canMerchantStartService`** 等，供前端按钮禁用/提示（见 **api/registry.md** 与 **api/merchant-api.md**）。用户侧列表 **`GET /api/v1/orders`** 使用同一套 `pricing` 结构。
+- 流转：推荐 **`confirm` / `start-service` / `finish-service` / `cancel`**（见 **api/merchant-api.md**）；兼容 `transition`。服务中取消可能触发**钱包扣罚**等，响应字段与多语言错误见 **api/registry.md** 与后端 `lang/*/merchant_api.php`。
+- **自动商家确认**：客户在开放且可预约日内下单且后端返回 **`merchantAutoConfirmed`** 时，订单已带 **`confirmedServiceTime`**，商户侧仍按同一状态机操作，但可减少「单独确认服务时间」这一人工环节（以后端实现、**api/registry.md** 与 **api/merchant-api.md** 为准）。
+- **互评（商户端待接入）**：在客户确认完成、订单达 **`customer_completed`** 后，商户端应提供对客户的评价入口；接口建议 **`POST /api/v1/merchant/reviews`**，支持与用户侧相同的 **`hideForSeller`、可选转发广场** 等字段（见 **api/requests.md**）。
 
 ---
 
 ## 7. 维护约定
 
-- 流程口径变更：先改**实现**与 **api-user-list / api-merchant-list**，再同步**本文**与对应 **api-*-request** 条目。  
-- **待办清单**：大功能落地后，将本节勾选状态与 **api-user-request** / **api-merchant-request**「当前需求区」核对一次，避免长期漂移。  
-- **商户接口需求**发布到 **api-merchant-request.md**；进度与结论以本仓库 shared 文档与代码为准。
+- 流程口径变更：先改**实现**与 **api/registry.md** / **api/user-api.md** / **api/merchant-api.md**，再同步**本文**与 **api/requests.md** 条目。
+- **待办清单**：大功能落地后，将本节勾选状态与 **api/requests.md** 核对一次，避免长期漂移。
+- **商户接口需求**发布到 **api/requests.md**；进度与结论以本仓库 shared 文档与代码为准。
 
 ---
 
@@ -160,8 +184,8 @@
 | 对齐 | 与某文档或某段实现**说法一致** / **字段一致** / **步骤一致**（写清对照物） |
 | 主链路、主流程 | 写出具体步骤（如询价→下单→付款→评价） |
 | 阻断、非阻断 | **会不会拦住**某一步（写清接口或页面行为，例如未付款能否提交订单） |
-| 闭环、收敛、落地、打通 | 改为具体交付物或结果（已实现、已写入 api-user-list / api-merchant-list、已可联调等） |
+| 闭环、收敛、落地、打通 | 改为具体交付物或结果（已实现、已写入 api/registry.md 或 api/requests.md、已可联调等） |
 
-**缩写**：不要随意用拼音首字母或内部代号；`GET`/`POST`、`api-user-list`、`locale` 等固定技术写法可保留；业务缩写首次宜写全。
+**缩写**：不要随意用拼音首字母或内部代号；`GET`/`POST`、`api/registry.md`、`locale` 等固定技术写法可保留；业务缩写首次宜写全。
 
 **自检**：新同事能否不看黑话就明白要改哪些文件、调哪些接口、失败时返回什么？若不能，继续改写。
