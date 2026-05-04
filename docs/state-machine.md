@@ -1,6 +1,6 @@
 # 状态机（目标主态、子实体、与现网映射）
 
-最后更新：2026-04-28（P0.5 合同收敛）
+最后更新：2026-05-05（P1b 本地联调闭环）
 
 > 对外稳定字段名建议统一为 **`workflowStatus`**（camelCase，与现网 JSON 习惯一致）；库内列名 **`workflow_status`** 为实现细节。  
 > **目标**主态集合为**唯一**产品叙事；现网字值为**事实参照**，通过 **§4 映射** 收敛，**禁止**三处各写一套。
@@ -60,7 +60,7 @@
 
 1. **对外** API（用户/商家/BFF）在 **P1+** 以 **§1 目标** `workflowStatus` 为**主**展示字段。  
 2. **迁移期** 可选在响应中附带 **`legacyWorkflowStatus`**（即当前 DB 原值）**供调试**；**不**对普通用户作主要展示（**待决策**，默认**不**暴露给生产客户端）。  
-3. **新单**（以订单创建策略为准）在实现切换后**直接**写**目标**态或**双写**由 **`R-20260428-010`** 落地。  
+3. **P1b 本地实现**：`POST /api/v1/orders` 已支持 `standardServiceCode + quotePreviewId` 创建订单；数据库仍写旧 `workflow_status`，API 对外返回目标 `workflowStatus`，并临时返回 `legacyWorkflowStatus` 供联调。
 4. **老单**通过后台任务或读时**映射**（**不得**在控制器中散落 if-else 而不读配置表/映射表）。
 
 | 现网/历史上常见 `workflow_status` 片段（示例，非穷举） | 目标 `workflowStatus` 方向（示例映射） |
@@ -73,7 +73,7 @@
 | `customer_completed`                                  | 目标 **`customer_completed`**（一致） |
 | `cancelled` / `refunded`                              | 目标 **`cancelled` / `refunded`**（一致或补 `after_sales`） |
 
-**本表**为**方向**；**精确一一映射**以 **R-20260428-010** 实现与**洗数**脚本为准。
+**本表**为**方向**；当前代码单源在 `OrderWorkflowStatusPresenter`，洗数或长期双写策略仍归 **R-20260428-010**。
 
 ## 5. 支付子状态
 

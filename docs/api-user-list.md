@@ -1,6 +1,6 @@
 # 用户端与公共 API 状态清单
 
-最后更新：2026-03-29
+最后更新：2026-05-05
 
 > **契约与联调结论（用户 JWT、访客可读目录、订单/支付/广场等）**。  
 > 商户专用接口见 **[api-merchant-list.md](api-merchant-list.md)**。  
@@ -11,14 +11,14 @@
 
 - 接口细节以 `expatth-backend` 路由与实现为准。
 - 业务步骤与设定见 `project-flow.md`。
-- 已下线或冻结（与全局一致）：`/api/v1/ads`、`/api/v1/settings`、`/api/v1/applications`、`/api/v1/merchants/nearby`、`/api/v1/me/messages`、`/api/v1/me/favorites`、`/api/v1/service-processes/*`、`/api/v1/merchant/service-config*` 等。
+- 已下线或冻结（与全局一致）：`/api/v1/ads`、`/api/v1/settings`、`/api/v1/applications`、`/api/v1/merchants/nearby`、`/api/v1/me/favorites`、`/api/v1/service-processes/*`、`/api/v1/merchant/service-config*` 等。
 
 ## 用户侧接口分组
 
 | 分组 | 说明 |
 |------|------|
 | `/api/v1/auth/*` | 注册、登录、`GET auth/me` |
-| `/api/v1/me/*` | 资料、地址簿、钱包、语言（**不含**订单；订单在 `/orders*`） |
+| `/api/v1/me/*` | 资料、地址簿、消息、钱包、语言（**不含**订单；订单在 `/orders*`） |
 | `/api/v1/orders*` | **需用户 JWT**：列表、详情、取消、隐藏、确认完成 |
 | `/api/v1/payments/*` | `intent`（需登录）、`callback`（渠道） |
 | `/api/v1/reviews` | 用户评价（需登录） |

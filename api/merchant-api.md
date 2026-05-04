@@ -199,4 +199,4 @@
 ## 10. 与「商家端 BFF / 前端」关系
 
 - 若部署中通过 Next 等 BFF 将 `/api/merchant/...` 代理到 `/api/v1/merchant/...`，**合同仍以上述后端路径与字段为准**；BFF 不得改变业务语义。
-- 命名与禁止项见 `roles/merchant-frontend.md`；若仓库内存在 `rules/naming-rules.md` 等，与之对齐。
+- 命名与禁止项见 `PROJECT_RULES.md` 与 `roles/merchant-frontend.md`。

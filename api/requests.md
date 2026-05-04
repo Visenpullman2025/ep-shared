@@ -1,6 +1,6 @@
 # API 需求池（唯一入口）
 
-最后更新：2026-04-28（P0.5 合同收敛批次）
+最后更新：2026-05-05（P1b 本地 API 联调）
 
 > **所有**待实现、待改字段、待补错误码、跨角色冲突，**只**写本文件；**禁止**只在聊天或 issue 里约定后直连改代码。  
 > 合同文档 **user-api / merchant-api** 为**稳定合同**；**缺口**仍回写本文件。  
@@ -143,9 +143,9 @@
 - 失败场景：422 `quotePreviewId` 无效/过期/与 `code` 不一致；地址/手机门禁等现网 422；重复单策略。
 - 待决策点：是否允许 **无** `quotePreviewId` 的弱网重试（不推荐，若允许须单独 R- 放开）。
 - 影响页面：提交订单、订单详情。
-- 状态：**accepted**（合同已收敛；**现网**仍以旧入参为主，见 registry）
+- 状态：**implemented**（P1b 本地闭环：`standardServiceCode + quotePreviewId + requirementPayload + serviceAddress` 已可创建订单；候选/MQC 子实体仍按 R-009/R-014 planned）
 - 关联合同：user-api §4、§10
-- 关联代码：`OrderController@store`（待 P1 改参）
+- 关联代码：`OrderController@store`、`OrderFlowService`、`StandardServiceOrderPayloadResolver`
 
 ---
 
@@ -174,9 +174,9 @@
 - 失败场景：N/A
 - 影响页面：全端展示、运营报表、BI。
 - 待决策点：迁移期**双写**还是仅新单用新枚举；老单**洗数据**策略。
-- 状态：**proposed**（**文档**已给出对照方向于 `state-machine` §4；**实现与洗数**为 P1）
+- 状态：**implemented**（P1b 本地：API 对外返回目标 `workflowStatus`、`nextAction`，迁移期返回 `legacyWorkflowStatus`；洗数/DB 双写仍待后续）
 - 关联合同：`state-machine.md`、全角色订单字段
-- 关联代码：`OrderWorkflowService`、未来迁移任务
+- 关联代码：`OrderWorkflowStatusPresenter`、`OrderFlowService`、`MeCenterController`
 
 ---
 
@@ -297,18 +297,18 @@
 
 ---
 
-## R-20260428-018 用户端（expath）BFF 与 user-api 新路径对齐
+## R-20260428-018 用户端（ep）BFF 与 user-api 新路径对齐
 
 - 来源角色：User Frontend
-- 背景：P0.5 只读审查：expath 当前仅 BFF 代理 `GET/POST` 至旧 `/api/v1/services/*`，**无** 对 `standard-services` / `quote-preview` 的 BFF；`POST /api/orders` 与 `orders/new` 仍依赖 `serviceId` 与 `processData` 等旧体。P1 接入新主链前，需在 **expath** `app/api` 增路由与上游 `api/user-api.md` §1–3、新 `POST /api/v1/orders` 对齐（与旧 BFF 并存、切流以 R-005/008/009 为准）。
+- 背景：P0.5 只读审查：`ep` 当前仅 BFF 代理 `GET/POST` 至旧 `/api/v1/services/*`，**无** 对 `standard-services` / `quote-preview` 的 BFF；`POST /api/orders` 与 `orders/new` 仍依赖 `serviceId` 与 `processData` 等旧体。P1 接入新主链前，需在 **ep** `app/api` 增路由与上游 `api/user-api.md` §1–3、新 `POST /api/v1/orders` 对齐（与旧 BFF 并存、切流以 R-005/008/009 为准）。
 - 需要的接口：Next.js BFF 路由（**非** Laravel 新条）：`GET/POST` 对 ` /api/v1/standard-services`、`/api/v1/standard-services/{code}`、`/api/v1/standard-services/{code}/requirement-template`、`/api/v1/standard-services/{code}/quote-preview` 的透传；`POST /api/v1/orders` 透传 **`standardServiceCode` 等**新字段。具体 BFF 路径与 `docs/frontend-api-renames.md` 只读对齐一次，避免与现 `/api/services` 混淆。
 - 请求字段草案：与上游及现 BFF 一致，JWT 与 `locale` 透传同 `src/app/api/orders`。
 - 响应字段草案：不裁剪业务字段，错误体透传。
 - 失败场景：401/404/422 与上游一致；禁止 BFF 自定义平行错误枚举。
-- 影响页面：首页/类目/标准服务详情/需求页/粗报价/下单在 **expath** 的调用链。
-- 状态：**proposed**（**P1a 已在 expath 落地**对 `standard-services*` 的 BFF 与列表/详情/需求/粗报价页；**`POST /api/orders` 新体** 仍属 **P1b**）
+- 影响页面：首页/类目/标准服务详情/需求页/粗报价/下单在 **ep** 的调用链。
+- 状态：**implemented**（P1b：用户端 BFF 已透传 `POST /api/orders` 新体，标准服务报价页可用 `quotePreviewId` 创建订单）
 - 关联合同：user-api §1–3、§4
-- 关联代码（P1a 已提交）：`expath` `src/app/api/standard-services/route.ts`、`[code]/route.ts`、`[code]/requirement-template/route.ts`、`[code]/quote-preview/route.ts`；页面 `src/app/[locale]/standard-services/page.tsx`、`[code]/page.tsx`、`[code]/quote/page.tsx`；`src/lib/requirement-form.ts`、`src/lib/standard-services.ts`。**`POST` orders 透传** 仍待 P1b
+- 关联代码：`ep` `src/app/api/standard-services/route.ts`、`[code]/route.ts`、`[code]/requirement-template/route.ts`、`[code]/quote-preview/route.ts`、`src/app/api/orders/route.ts`；页面 `src/app/[locale]/standard-services/page.tsx`、`[code]/page.tsx`、`[code]/quote/page.tsx`；`src/lib/requirement-form.ts`、`src/lib/standard-services.ts`
 
 ---
 

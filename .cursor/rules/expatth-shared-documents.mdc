@@ -1,13 +1,13 @@
 ---
-description: Expatth shared 文档与 API 边界（expatth-shared 仓库内）
+description: ExpatTH shared 文档与规则入口
 globs: "**/*"
 alwaysApply: true
 ---
 
-# Expatth shared 工作方式
+# shared 入口规则
 
-- **需求池**仅 [api/requests.md](../../api/requests.md)；**已落地接口**仅 [api/registry.md](../../api/registry.md)。改 HTTP 约定须先有 **R-** 条目推进。
-- **七词**与 **standardServiceCode** 见 [docs/glossary.md](../../docs/glossary.md)；禁词见 [rules/deprecated-terms.md](../../rules/deprecated-terms.md)。
-- **主流程** [docs/fulfillment-flow.md](../../docs/fulfillment-flow.md)、**目标状态** [docs/state-machine.md](../../docs/state-machine.md)。**[docs/project-flow.md](../../docs/project-flow.md) 非新主文**，仅作参考。
-- **工作报告**只写 [reports/](../../reports/)；Backend/User/Merchant 三个 AI 必须更新各自报告文件，禁止只在聊天里汇报。
-- 中文对外表述：少空泛词，写清谁/做哪步/写哪份文件；对照 `shared/docs/project-flow.md` 第 8 节（若被引用）。
+每次任务必须先读：`../../PROJECT_RULES.md`。
+
+`ep-shared` 只负责合同、术语、状态、数据库计划、规则和审计记录，不放运行时代码。
+
+文档职责、格式、越界审计和触发阅读方式以 `../../PROJECT_RULES.md` 为准。

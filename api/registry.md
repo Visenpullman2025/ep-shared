@@ -1,6 +1,6 @@
 # 已实现 API 目录（联调真实）
 
-最后更新：2026-04-28（P0.5 + **P1a StandardService 骨架**）
+最后更新：2026-05-05（P1b StandardService 下单闭环）
 
 > 仅登记**已**在**现网后端**注册、或**本文件明确**的接口状态。与 **[requests.md](requests.md)** 中**未实现**项**不得**标为 `implemented`。  
 > **图例（状态）**  
@@ -11,7 +11,7 @@
 **新主链：P1a 已接路由**（分条见下「StandardService / P1a」**；**部署须 `migrate` +** **`StandardServiceP1aSeeder`）** 与**仍** **planned** 的项**分开记**：
 
 - **P1a 已实现**（`expatth-backend` `routes/api.php`）：`GET/GET/GET/POST` **`/api/v1/standard-services*`**。  
-- **仍 planned**（合同在 **user-api / merchant-api**，**无** 现网路由或**无** 完整行为）：`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`、`POST /api/v1/orders/{orderNo}/after-sales`、`/api/v1/merchant/capabilities*`、`/merchant/order-requests*`、`/merchant/.../quote-confirmation`、`/merchant/credit-profile` 等。  
+- **仍 planned**（合同在 **user-api / merchant-api**，**无** 现网路由或**无** 完整行为）：`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`、`POST /api/v1/orders/{orderNo}/after-sales`、`/api/v1/merchant/capabilities*`、`/merchant/order-requests*`、`/merchant/.../quote-confirmation`、`/merchant/credit-profile` 等。`POST /api/v1/orders` 已支持 P1b 最小新主链创建订单，但候选/MQC 子实体仍 planned。
 
 **compatibility 小结**：**`/api/v1/services*`** 与 **`/api/v1/merchant/services*`** 在分条中均标为 **compatibility**（**非**新主链终局入口）。**旧** 粗报 **`POST /services/{id}/price-preview`** 仍为 **compatibility**；**新** 粗报以 **`POST /standard-services/{code}/quote-preview`** 为准（P1a）。
 
@@ -242,15 +242,28 @@
 
 ---
 
-## POST /api/v1/orders
+## GET /api/v1/me/messages
 
-- 状态：compatibility（入参以 `serviceId` 等为主；目标为 `standardServiceCode` + 关联 `quotePreviewId` 等）
+- 状态：implemented
 - 调用方：用户端
 - 权限：用户 JWT
-- 请求：含 `processData`、地址、`quotedAmount` 等（以代码为准）
-- 响应：订单号、`pricing`、`merchantAutoConfirmed` 等
-- 实现位置：`OrderController@store` / `OrderFlowService`
-- 前端使用位置：创建订单
+- 请求：query `page`、`pageSize`、可选 `unreadOnly`
+- 响应：`list`、`total`、`page`、`pageSize`
+- 实现位置：`MeCenterController@messages`
+- 前端使用位置：用户端消息页、`ep` BFF `src/app/api/me/messages/route.ts`
+
+---
+
+## POST /api/v1/orders
+
+- 状态：implemented（兼容旧 `serviceId`；P1b 已支持 `standardServiceCode` + `quotePreviewId`）
+- 调用方：用户端
+- 权限：用户 JWT
+- 请求：新主链为 `standardServiceCode`、`quotePreviewId`、`requirementPayload`、`serviceAddress`；旧兼容仍含 `serviceId`、`processData`、`quotedAmount`
+- 响应：`orderNo`、目标 `workflowStatus`、`legacyWorkflowStatus`、`nextAction`、`standardServiceCode`、`quotePreviewId`、`pricing`
+- 实现位置：`OrderController@store` / `OrderFlowService` / `StandardServiceOrderPayloadResolver`
+- 前端使用位置：标准服务报价页创建订单、旧下单兼容页
+- 联调证据：2026-05-05 本地 `POST /api/v1/orders` 用 `quotePreviewId=9` 创建 `ord-1004`；`ep` BFF `POST /api/orders` 用 `quotePreviewId=10` 创建 `ord-1005`，均返回 `workflowStatus=waiting_merchant_confirmation`、`legacyWorkflowStatus=pending_merchant_confirm`、`nextAction=wait_merchant_confirmation`。
 
 ---
 

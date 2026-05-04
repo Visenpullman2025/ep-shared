@@ -1,6 +1,6 @@
 # Backend API / Shared 核心边界
 
-最后更新：2026-04-28
+最后更新：2026-05-05
 
 ## 1. 本边界的职责
 
@@ -30,7 +30,7 @@
 | **MerchantCandidate** | 匹配阶段产生的**候选**商家，含生命周期状态。 |
 | **MerchantQuoteConfirmation** | 商家对**最终金额与服务条件**的确认（含可审计状态）。 |
 
-禁止混用其它英文词作同一层叙事（如把 StandardService 说成 “catalog product”）。**禁止**在核心业务叙述中使用：`product`、`goods`、`item`（作商品义）、`listing`、`shop_service`、`service product`（表义合并见 `rules/deprecated-terms.md`）。
+禁止混用其它英文词作同一层叙事（如把 StandardService 说成 “catalog product”）。**禁止**在核心业务叙述中使用：`product`、`goods`、`item`（作商品义）、`listing`、`shop_service`、`service product`（规则见 `PROJECT_RULES.md`）。
 
 ## 4. 「旧 service」的降级定义
 
@@ -40,3 +40,32 @@
 ## 5. 文档与代码谁说了算
 
 - **P0**：以 **本目录 + 后端现网路由** 对齐「已实现」事实，以 **glossary + state-machine** 对齐目标语义；有缺口一律进 **`api/requests.md`**，不在控制器或前端各自发明状态名。
+
+## 6. 前端边界
+
+前端包括 `ep` 用户端和 `epmerchant` 商家端。前端的职责是承接用户交互和 BFF 适配，不是业务事实源。
+
+前端可以做：
+
+- 页面、组件、BFF、i18n、样式、输入表单、展示状态、用户引导。
+- 读取 shared 合同和后端返回，展示字段、错误、状态和下一步动作。
+- BFF 中做认证转发、cookie/session 处理、轻量字段映射和错误透传。
+
+前端不能做：
+
+- 自行定义 API 字段、状态、错误码、金额规则、权限规则。
+- 在页面或 BFF 写订单状态机、匹配算法、商家候选逻辑、钱包金额规则。
+- 用 mock、隐藏按钮、静态数据或本地兜底伪装真实功能。
+- 只靠前端隐藏入口来保证权限、金额、所有权或状态推进。
+
+用户端 `ep`：
+
+- 主入口是 **StandardService** / **`standardServiceCode`**。
+- 旧 **`serviceId`** 只能作为 compatibility，不作为新下单主线。
+- 不让用户选择商家或师傅作为必经步骤。
+
+商家端 `epmerchant`：
+
+- 长期对象是 **MerchantCapability**、**MerchantCandidate**、**MerchantQuoteConfirmation**。
+- 旧 `merchant/services*` 只能是 compatibility，不强化“服务商品 / 上架商品”心智。
+- 不能代替用户确认 MQC 或支付 / 预授权。
