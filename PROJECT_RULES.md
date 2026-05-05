@@ -245,6 +245,7 @@ BFF 边界：
 | 日期 | 来源 | 影响位置 | 越界行为 | 风险 | 修正动作 | 状态 |
 | ---- | ---- | -------- | -------- | ---- | -------- | ---- |
 | 2026-05-04 | 前端 API 链路检查 | `ep/src/app/api/me/favorites/route.ts`、`ep/src/app/[locale]/me/favorites/page.tsx`、`epbkend/expatth-backend/routes/api.php`、`ep-shared/api/requests.md`、`ep-shared/api/registry.md` | 前端已存在 `/api/me/favorites` BFF 和页面调用，但当前 shared 主需求池/已实现目录未登记，后端路由扫描未发现 `me/favorites`；旧文档还标记该路径已下线或冻结。 | 页面会调用一个没有当前合同和后端路由支撑的接口，容易被误认为“前端 API 已补完”。 | 已删除用户端 favorites 页面、BFF、个人中心入口和通用占位，不再调用或展示不存在的后端接口。 | fixed |
+| 2026-05-06 | Dcat Plus 后台审计 | `epbkend/expatth-backend/config/admin.php`、`epbkend/expatth-backend/app/Admin/routes.php`、`epbkend/expatth-backend/app/Admin/Controllers/*WalletReviewRequestController.php`、`epbkend/expatth-backend/app/Admin/Controllers/OrderController.php`、`epbkend/expatth-backend/app/Admin/Controllers/SystemSettingController.php` | Dcat 内置表连接跟随默认 PostgreSQL；钱包审核、订单状态金额、系统设置删除存在可绕过受控服务的后台写入口。 | 后台权限边界会漂移，资金流水、订单状态机和系统配置可能出现不一致。 | 已把 Dcat 内置表连接锁定为 MySQL；钱包审核与订单后台改为只读资源，审核只走 RowAction/Service；系统设置移除删除路由和删除动作；Dcat helpers 默认关闭。 | fixed |
 
 ## 15. 规则成长候选
 
