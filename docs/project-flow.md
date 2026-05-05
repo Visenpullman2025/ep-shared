@@ -1,6 +1,6 @@
 # 项目流程与设定（公共）
 
-最后更新：2026-05-05（P1 最小交易闭环已实现）
+最后更新：2026-05-05（P2/P3 代码切片与合同已同步）
 
 > 本文件用于团队内部统一说法、对外展示业务设定与从询价到评价的主要步骤，不替代接口契约。  
 > **接口合同与状态**：用户端见 [../api/user-api.md](../api/user-api.md)，商家端见 [../api/merchant-api.md](../api/merchant-api.md)，已实现接口见 [../api/registry.md](../api/registry.md)；**需求与差异**统一写入 [../api/requests.md](../api/requests.md)。**路径更名对照**见 [frontend-api-renames.md](frontend-api-renames.md)。用户订单接口为 **`/api/v1/orders*`**（需 JWT）；认证由中间件保证。
@@ -30,9 +30,24 @@
 #### P1+ - 暂不纳入本轮
 
 - R-004 商户评价客户：仍 draft，不做前端入口。
-- R-016 availability capacity/timeSlots：仍 proposed，本轮不改现有开放日 API JSON 形状。
+- R-016 availability capacity/timeSlots：已进入 P2 accepted，与 R-021 合并推进。
 - R-017 GET quote-preview 旁路：仍 draft，本轮通过订单扩展块恢复报价信息。
 - 本地运行卫生：若影响测试则修；不把 PHP 8.5 依赖升级当作本轮业务完成条件。
+
+#### P2 - 真实可用化
+
+- 范围：R-020 至 R-023。
+- 目标：动态推荐、档期/容量/就绪状态、行业 WorkflowDefinition、平台代管与平台 1% 收益形成真实链路。
+- 首批样板：空调清洗、保洁。
+- 状态：已完成最小代码切片；真实 DB migrate 与带真实账号的浏览器 E2E 仍需在本地环境启动后执行。
+- 验收：真实 DB migrate；两个样板能生成不同 RequirementPayload 与 QuotePreview；候选推荐有可解释快照；用户确认 MQC 后款项可进入平台代管并展示平台收益与商家结算金额。
+
+#### P3 - 履约和信用闭环
+
+- 范围：R-024 至 R-025，并完成 R-004。
+- 目标：履约事件、异常惩罚、双方完成、结算、互评、广场脱敏分发闭环。
+- 状态：已完成履约事件、结算释放、信用事件、用户评价广场分发、商户评价客户的最小代码切片；用户信用事件和真实支付渠道预授权仍可后续增强。
+- 验收：商家开始/完成、用户确认完成、结算释放、信用事件、双方评价与广场发布可走通；registry 只登记真实已实现接口。
 
 > **维护**：完成项改为 `- [x]`，并更新文件顶部「最后更新」；阶段任务若涉及 HTTP 合同，必须同步 `api/requests.md`，已实现后同步 `api/registry.md`。
 
@@ -83,7 +98,7 @@
 **目标**：满足下单与展示所需的最小资料（手机号、头像昵称、地址与门牌、地图选点）。
 
 1. **资料读写**：`GET /api/v1/me/profile`、`POST /api/v1/me/profile`（如手机、头像、昵称等，只读项以后端为准）。
-2. **地址簿**：`GET /api/v1/me/addresses`、`POST /api/v1/me/addresses`、`PUT /api/v1/me/addresses/{addressId}`、`POST /api/v1/me/addresses/{addressId}/default`（支持默认地址、门牌图、经纬度可空等，见 **api/registry.md**）。
+2. **地址簿**：`GET /api/v1/me/addresses`、`POST /api/v1/me/addresses`、`PUT /api/v1/me/addresses/{addressId}`、`DELETE /api/v1/me/addresses/{addressId}`、`POST /api/v1/me/addresses/{addressId}/default`（支持默认地址、门牌图、经纬度可空等，见 **api/registry.md**）。
 3. **地图配置（前端）**：`GET /api/v1/maps/config`（如 Google Maps Key、允许国家等，依赖环境变量）。
 4. **图片上传**：`GET /api/v1/uploads/oss-policy?scene=...`（头像、门牌照等 scene 名见 **api/registry.md**）。
 
@@ -110,11 +125,11 @@
 
 1. 前端在 `POST /api/v1/orders` 里传的 `quotedAmount`（或兼容字段 `amount` / `totalAmount`）只表示**费前服务底数**（未含税、未含平台费），**不能**在客户端自行加平台费或税费再当作最终应付。
 2. 后端在创建订单时按系统设置计算并**落库**：
-   - `order.vat_rate_percent`：税费率（百分数），作用于 `service_subtotal`；为 **0** 时 `taxFee` 为 0，等价于「只有报价 + 平台费」。
-   - `order.platform_commission_percent`：平台服务费比例（百分数），作用于 **`service_subtotal + tax_fee`** 之和（即含税服务合计），得到 **`flatFee`（库内 `platform_fee`）**。
-   - **`amount_total`** = `service_subtotal` + `tax_fee`（应付给商户侧的服务合计，不含平台费）。
-   - **`user_payable`** = `amount_total` + `platform_fee`（客户实付）。
-   - **`merchant_settlement`**：完结后应付商户金额，与 `amount_total` 一致（平台费留在平台）。
+   - `order.platform_commission_percent`：平台服务费比例（百分数），只作用于 **`service_subtotal`**，得到 **`flatFee`（库内 `platform_fee`）**；默认 **1%**，记为平台收益。
+   - `order.vat_rate_percent`：税费率（百分数），只作用于 **`service_subtotal`**；默认 **7%**，不得把平台服务费计入税费基数。
+   - **`amount_total`** = `service_subtotal` + `tax_fee`（含税服务合计，不含平台费）。
+   - **`user_payable`** = `service_subtotal` + `platform_fee` + `tax_fee`（客户实付）。
+   - **`merchant_settlement`**：完结后应付商户金额，默认与 `service_subtotal` 一致；平台服务费与税费不进入商户结算。
 3. 对外展示（下单返回、订单详情、`GET /api/v1/orders`、商户 `GET /api/v1/merchant/orders`）统一带 **`pricing` 对象**，字段为字符串金额，便于前端直接渲染：
    - **`amount`**：费前服务底数（`service_subtotal`）
    - **`taxFee`**：税费

@@ -1,10 +1,18 @@
 # 用户端 API 合同（User API Contract）
 
-最后更新：2026-05-05（P1 最小交易闭环可联调）
+最后更新：2026-05-05（P2/P3 目标合同补充）
 
 > 本文档只描述**用户端开放 HTTP API 的合同形态**（路径、方向、核心字段、兼容策略）。**需求池与缺口**见 **`api/requests.md`（唯一）**；**不得**在本文档承担需求池职责。历史 `docs/api-user-request.md` 不维护。  
 > 业务词表与七词定义见 `docs/glossary.md`；平台边界见 `docs/boundaries.md`。  
 > 目标订单主态见 `docs/state-machine.md`；履约顺序见 `docs/fulfillment-flow.md`；**错误语义**见 `api/error-codes.md`。
+
+## 0.2 P2/P3 合同补充
+
+- 用户仍从 **StandardService** 进入，不从商家行或旧 `serviceId` 进入。
+- 创建订单后，商家候选由后端按 **MerchantCapability**、星级、服务质量、响应速度、距离、价格、档期与就绪状态生成；用户端只展示推荐摘要，不计算排序。
+- 用户确认 **MerchantQuoteConfirmation** 后，支付/预授权进入平台代管；平台服务费默认按服务小计收取 1%，税费默认按服务小计收取 7%，订单 `pricing` 返回服务小计、平台服务费、税费和应付合计。
+- 用户确认服务完成后，订单进入结算链路；用户可评价商家，并可选择将脱敏评价摘要同步到广场。
+- 具体缺口以 `api/requests.md` R-020 至 R-025 为准；未在 `api/registry.md` 标记 implemented 前，前端不得伪装完成。
 
 ## 0.1 P1 实现状态与联调（必读）
 
@@ -25,6 +33,7 @@
 - **新主流程固定概念**（叙述与字段命名优先使用英文标识）：**StandardService**、**RequirementTemplate**、**RequirementPayload**、**QuotePreview**、**MerchantCapability**、**MerchantCandidate**、**MerchantQuoteConfirmation**。
 - **用户侧新入口主键**：**`standardServiceCode`（string）**，不得再作为长期合同中的「选某一 `serviceId` 再下单」唯一主叙事。
 - **旧 `service` / `serviceId`**：在迁移完成前仅表示**旧商家服务配置 / 商家能力配置**（与 `yipai_services` 等现网数据对应），见 `docs/boundaries.md` §4。
+- **用户可见服务名**：订单列表、详情、支付、评价等页面展示的服务名必须来自后端订单响应的 `serviceTitle` / `standardService` 展示字段，或来自已登记的 **StandardService** 配置；不得让客户端把内部 code（如类目 code 或 legacy service code）直接展示给用户。
 
 **业务叙述禁用词**（与 `docs/glossary.md` 一致）：在描述用户下单与平台服务时，不使用 `product`、`goods`、`item`（作货品义）、`listing`、`shop_service`、`service product`。
 
@@ -185,6 +194,8 @@
 - **GET** `/api/v1/orders/{orderNo}`
 
 **用途**：本人订单详情；字段与列表对齐，并包含 **workflow**、**pricing**、与 **StandardService** / **QuotePreview** / **MerchantQuoteConfirmation** 等衔接所需引用字段（随后端分期补齐）。
+
+P2/P3 订单详情应逐步包含：`matching` 推荐摘要、`fulfillmentEvents` 履约事件摘要、`paymentHold` 平台代管摘要、`settlement` 结算摘要、`creditImpact` 信用影响摘要。字段未实现时不得由 BFF 或前端编造。
 
 ### 7.3 取消
 

@@ -1,6 +1,6 @@
 # 商家端 API 合同（Merchant API Contract）
 
-最后更新：2026-05-05（P1 商家能力、候选与确认单已实现）
+最后更新：2026-05-05（P2/P3 可用性、履约与信用合同补充）
 
 ## 概述
 
@@ -44,7 +44,8 @@
 
 - **已**在现网**注册、可联调**（`registry`）：`merchant/auth*`、`profile`、`verification`、**`GET/PUT /merchant/availability`**、**`merchant/orders*`**、**`merchant/wallet*`**、**`merchant/services*`**（**compatibility**）等。  
 - **P1 已实现**：**GET/POST/PUT/GET** **`/api/v1/merchant/capabilities`**、**`GET /api/v1/merchant/order-requests`**、**`POST /api/v1/merchant/order-requests/{candidateId}/quote-confirmation`**、**`GET /api/v1/merchant/credit-profile`**。已登记到 `api/registry.md`。
-- **`openDates` 与** **`capacity` / timeSlots` 的演进**（`R-20260428-016`）：在**不删** 原 **`PUT /merchant/availability`** 的前提下**扩展** body/响应；本轮 P1 不锁死 JSON 形状，不把 capacity/timeSlots 做成前端假能力。
+- **`openDates` 与** **`capacity` / timeSlots` 的演进**（`R-20260428-016`）：在**不删** 原 **`PUT /merchant/availability`** 的前提下**扩展** body/响应；P2 以 R-021 收敛 `readyStatus`、容量与时段，不把 capacity/timeSlots 做成前端假能力。
+- **P2/P3 补充**：商家能力、档期、就绪状态会参与推荐；商家开始服务、完成服务、迟到、未履约、售后判责会写入履约事件和信用事件；商家评价客户走 R-004/R-025。
 - **新主**商家报价入口以 **§4–5** 为准；旧 **`POST .../merchant/orders/{orderNo}/confirm`** 为 **compatibility/过渡**（以 `registry` 为准，若路由仍存在）。
 
 ---
@@ -86,6 +87,9 @@
 - `openDates`：开放日（与「开放日/容量」接口可衔接；结构可演进）
 - `status`：能力行状态
 - `reviewState`：审核态（若平台对能力做审核）
+- `readyStatus`：商家或能力当前是否可接单（P2/R-021）
+- `matchingPolicyCode`：推荐策略 code（如后端需要暴露给运营或调试）
+- `workflowPolicyCode`：行业工作流策略 code（如空调清洗、保洁）
 
 ---
 
@@ -96,7 +100,7 @@
 | GET | `/api/v1/merchant/availability` | 查询开放日等 |
 | PUT | `/api/v1/merchant/availability` | 更新开放日等 |
 
-**说明**：当前以 **`openDates[]`**（`YYYY-MM-DD`）等为主；**后续**需扩展为 **capacity** / **time slots** 等与 **MerchantCandidate**、**MerchantQuoteConfirmation** 的**完整协同**模型。扩展时**不得**绕开 shared 合同在单仓库**发明**对外语义；**演进策略** 见 **`api/requests.md` R-20260428-016**。
+**说明**：当前以 **`openDates[]`**（`YYYY-MM-DD`）等为主；P2 扩展为 **capacity** / **time slots** / **readyStatus** 等与 **MerchantCandidate**、**MerchantQuoteConfirmation** 的完整协同模型。扩展时**不得**绕开 shared 合同在单仓库**发明**对外语义；演进策略见 **`api/requests.md` R-20260428-016** 与 R-021。
 
 ---
 
@@ -156,6 +160,8 @@
 | POST | `/api/v1/merchant/orders/{orderNo}/cancel` | 取消订单 |
 
 **列表项核心字段（与现网联调对齐，示例级）**：`orderNo`、客户展示字段、金额与支付相关（如 `paymentStatus`、`customerPaid`、`canMerchantStartService`）、`workflowStatus`、服务地址、预约/确认时间、**`status`** 等。**订单业务状态机** 以 `docs/state-machine.md` 与后端实现为准，商家端 **不得** 自行定义独立状态名。
+
+P2/P3 列表和详情应逐步包含：`fulfillmentEvents` 摘要、`settlement` 摘要、`creditImpact` 摘要、异常/惩罚提示。具体字段以 R-024/R-025 和 registry 已实现项为准。
 
 **兼容（过渡）**：历史上可能存在 `POST /api/v1/merchant/orders/{orderNo}/confirm`、`POST .../transition` 等路径，用于旧流中确认时间或状态迁移；**新主流程** 的终局报价与时间以第 5 组 **MerchantQuoteConfirmation** 为准，履约段以本节动作为准。具体是否仍注册见 `api/registry.md`。
 

@@ -25,6 +25,7 @@
 - TypeScript/React/Next：遵守项目 ESLint、TypeScript、Next 约定；组件 PascalCase，函数和变量 camelCase，路径按现有目录风格。
 - API：面向资源时采用 RESTful 命名；平台业务词、状态和字段优先以 shared 合同为准。
 - 数据库：表、字段、索引先表达业务事实和查询路径；不为临时 UI 随手建表。
+- Dcat Plus 后台在当前项目中保持 MySQL/default connection 边界；未完成后台替换或迁移方案前，不得把后端默认连接直接切到 PostgreSQL。
 - 现有项目风格优先于外部通用规范；冲突时先说明取舍，不悄悄混用。
 - 用户举例不自动成为硬规则。例如“统一驼峰”代表要有命名标准，不代表所有层都必须 camelCase；是否升级必须按第 6 节标准化。
 - 专业协作不是机械执行。需求有更好路径时，先说明目标、风险、取舍和推荐方案；如果用户确认原方案且不触犯最高准则，再继续执行。
@@ -128,6 +129,10 @@
 - 在页面或 BFF 写订单主状态机、匹配逻辑、商家候选算法、钱包金额规则。
 - 只靠前端隐藏入口控制权限、金额、所有权或状态推进。
 - 创建平行主题、平行组件体系或绕过 `globals.css` 的局部视觉系统。
+- 无用户明确要求时，不在弹层、卡片或页面中添加解释型副文案、规则说明或使用说明；只保留标题、字段、状态、动作，以及必要的错误、合规、安全、空状态提示。
+- 用户可见界面不得直接展示内部状态、算法、结算和后端工作流字段，例如 `matching`、`wait_*`、候选分、冻结状态、结算状态、商家结算、内部 id 当标题。必须展示时先映射为客户能理解的业务文案。
+- 用户支付文案不得使用“冻结”描述平台资金保障；客户侧统一用“平台代管”或“平台保障”，避免误解为账户被冻结。
+- 用户端费用明细只展示后端 `pricing`，顺序为服务小计、平台服务费、税费、应付合计；前端不得重算金额或展示商家结算。
 
 用户端 `ep` 边界：
 
@@ -258,3 +263,9 @@ BFF 边界：
 | 2026-05-05 | 用户确认 | 对话命令 | 应该 | 全局 + ExpatTH | `/help` 列出协作命令；`/topro` 压缩任务；`/teamwork` 拆并行任务；`/codecheck` 进入审查；`/logerror` 记录失败和防复发。 | 用户输入对应斜杠命令 | 全局 `workflow-command-shortcuts` skill 和 `/help` 文档 | 全局 skill、`EXPATTH_HELP.md` | promoted |
 | 2026-05-05 | 用户确认 | 项目 skills | 应该 | ExpatTH | 新增 `expatth-api-gate`、`expatth-ui-system`、`expatth-release-check` 三个项目专用 skills，分别覆盖 API 闸门、UI 边界和交付验证。 | API 联调、UI 开发、交付前检查 | skill 文件存在且触发描述清晰 | 全局 skills、`PROJECT_RULES.md` | promoted |
 | 2026-05-05 | 用户确认 | 前端边界 | 必须 | ExpatTH | 前端只做页面、组件、BFF、i18n、样式、输入、展示和数据适配；业务主态、金额、权限、匹配、履约推进必须由后端和 shared 合同约束。 | 前端功能开发、BFF、UI 接口联调 | 第 8 节边界检查、API gate、代码审查 | `PROJECT_RULES.md` 第 8 节、`docs/boundaries.md` | promoted |
+| 2026-05-05 | 用户反馈 | 前端边界 | 应该 | ExpatTH | 用户可见业务文案必须来自后端合同或shared登记配置，不在页面局部维护内部code到文案的长期映射 | 内部code出现在用户界面、订单/支付/评价等展示字段缺失 | rg局部code-to-label映射并核对api/requests缺口登记 | PROJECT_RULES.md第8节与docs/boundaries.md | candidate |
+| 2026-05-05 | 用户反馈 | UI文案 | 必须 | ExpatTH | 无用户明确要求时不在弹层卡片页面添加解释型副文案规则说明或使用说明 | 前端UI新增标题以外的说明文字 | rg检查新增文案并对照用户需求和必要错误合规安全空状态例外 | PROJECT_RULES.md第8节 | promoted |
+| 2026-05-05 | 用户反馈 | 认证入口 | 应该 | ep | 需要登录的用户端入口必须生成带next的登录地址且登录页必须提供保留next的注册入口 | 新增auth-gated链接或未登录拦截 | `rg auth/login` 无裸登录链接，统一使用 `buildLoginHref` / `buildRegisterHref` | PROJECT_RULES.md 规则成长候选 | candidate |
+| 2026-05-05 | 用户反馈 | 认证门禁 | 必须 | ep | 用户端受保护页面必须由路由门禁重定向；需登录API收到401必须统一清session并跳登录，不在页面渲染未登录卡片 | 新增受保护页面或调用需登录BFF/API | curl无cookie访问受保护路由应307到auth/login；rg受保护路由无guestTip/goLogin残留 | PROJECT_RULES.md规则成长候选 | candidate |
+| 2026-05-05 | 用户反馈 | 费用展示 | 必须 | ExpatTH | 用户端费用明细只展示后端pricing，顺序为服务小计、平台服务费、税费、应付合计，前端不得重算金额或展示商家结算。 | 用户端订单、支付或报价费用展示 | rg费用明细并核对pricing字段；后端金额测试覆盖1%平台费和7%税费 | PROJECT_RULES.md第8节、expatth-codex-workflow skill | promoted |
+| 2026-05-06 | Dcat后台数据库核查 | 数据库边界 | 必须 | ExpatTH/epbkend | Dcat Plus后台仍使用MySQL/default connection时，不得直接把后端默认连接切到PostgreSQL。 | 数据库迁移、PostgreSQL能力接入、后台系统调整 | config:show database.default、config/admin.php、schema-plan、postgres-clean-rewrite | PROJECT_RULES.md、db/schema-plan.md、db/postgres-clean-rewrite.md | promoted |

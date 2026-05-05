@@ -1,6 +1,10 @@
 # 状态机（目标主态、子实体、与现网映射）
 
-最后更新：2026-05-05（P1b 本地联调闭环）
+最后更新：2026-05-05（P2/P3 履约、结算与信用 accepted）
+
+状态：accepted
+
+职责边界：本文只定义平台订单、候选、确认单、支付/冻结、履约、售后、结算和信用相关状态名；接口路径写入 `../api/*.md`，未实现缺口写入 `../api/requests.md`。
 
 > 对外稳定字段名建议统一为 **`workflowStatus`**（camelCase，与现网 JSON 习惯一致）；库内列名 **`workflow_status`** 为实现细节。  
 > **目标**主态集合为**唯一**产品叙事；现网字值为**事实参照**，通过 **§4 映射** 收敛，**禁止**三处各写一套。
@@ -22,6 +26,8 @@
 | `merchant_completed` | 商家侧标记完工。 |
 | `customer_completed` | 用户确认完成。 |
 | `after_sales` | 售后进行或待结（与 `after_sales_cases` 配合）。 |
+| `settlement_pending` | 服务已完成，等待平台结算。 |
+| `settled` | 已结算给商家，平台服务费已留存。 |
 | `cancelled` | 已取消。 |
 | `refunded` | 已退款（与支付子态、售后协同）。 |
 
@@ -78,6 +84,45 @@
 ## 5. 支付子状态
 
 `yipai_orders.payment_status` 现网常见：`pending` / `paid` / `refunded`。**预授权**若引入，在 **`payment_status` 或扩展字段** 中说明（`api/requests.md` R-003），**不**与 `workflowStatus` 混为同一套字符串。
+
+P2/P3 目标补充：
+
+| 建议值 | 说明 |
+|--------|------|
+| `pending` | 未支付或未预授权。 |
+| `authorized` | 已预授权，款项进入平台代管账户或等价渠道。 |
+| `paid` | 已实付，资金在平台担保中。 |
+| `settled` | 已向商家结算。 |
+| `released` | 预授权已释放或取消。 |
+| `refunded` | 已退款。 |
+
+## 5.1 履约事件类型（`fulfillmentEventType`）
+
+履约事件不是订单主态；它是可审计流水，由后端写入，用于信用、惩罚、结算和售后判断。
+
+| 值 | 说明 |
+|----|------|
+| `merchant_started` | 商家开始服务。 |
+| `merchant_completed` | 商家声明已完成。 |
+| `customer_completed` | 用户确认完成。 |
+| `late` | 迟到。 |
+| `no_show` | 未履约或未到场。 |
+| `dispute_opened` | 售后或争议已开启。 |
+| `penalty_applied` | 平台已应用惩罚。 |
+| `settlement_released` | 平台已释放结算。 |
+
+## 5.2 信用事件类型（`creditEventType`）
+
+信用事件用于推荐权重和档案展示，不由前端计算。
+
+| 值 | 说明 |
+|----|------|
+| `review_positive` | 正向评价或高评分。 |
+| `review_negative` | 负向评价或低评分。 |
+| `late_penalty` | 迟到惩罚。 |
+| `no_show_penalty` | 未履约惩罚。 |
+| `after_sales_fault` | 售后判责成立。 |
+| `completion_reward` | 正常完成奖励。 |
 
 ## 6. `nextAction` 字段
 

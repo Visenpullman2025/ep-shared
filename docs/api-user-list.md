@@ -54,7 +54,7 @@
 ## 资料、地址、地图、上传
 
 - **`GET/POST /api/v1/me/profile`**、`GET /api/v1/auth/me`：手机、头像、昵称等。
-- **`GET/POST /api/v1/me/addresses`**、`PUT .../{id}`、`POST .../default`；**`GET /api/v1/maps/config`**。
+- **`GET/POST /api/v1/me/addresses`**、`PUT/DELETE .../{id}`、`POST .../default`；**`GET /api/v1/maps/config`**。
 - **`GET /api/v1/uploads/oss-policy?scene=`**：`user-avatar`、`user-doorplate`；评价图 `review-image`（见 request）。
 - **`GET/POST /api/v1/me/wallets`**、`records`、`recharge`、`withdraw`。
 

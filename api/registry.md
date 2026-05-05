@@ -1,6 +1,6 @@
 # 已实现 API 目录（联调真实）
 
-最后更新：2026-05-05（P1 最小交易闭环）
+最后更新：2026-05-05（P2/P3 交易、履约与信用切片）
 
 > 仅登记**已**在**现网后端**注册、或**本文件明确**的接口状态。与 **[requests.md](requests.md)** 中**未实现**项**不得**标为 `implemented`。  
 > **图例（状态）**  
@@ -12,6 +12,7 @@
 
 - **P1a 已实现**（`expatth-backend` `routes/api.php`）：`GET/GET/GET/POST` **`/api/v1/standard-services*`**。  
 - **P1 已实现**：`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`、`POST /api/v1/orders/{orderNo}/after-sales`、`/api/v1/merchant/capabilities*`、`/merchant/order-requests*`、`/merchant/.../quote-confirmation`、`/merchant/credit-profile`；`POST /api/v1/orders` 已按 `MerchantCapability` 生成候选。
+- **P2/P3 已实现切片**：动态候选匹配快照、能力就绪/容量/时段字段、支付冻结摘要、履约事件、商家信用事件、商家评价客户、评价可选广场分发；真实 DB migrate 与端到端浏览器联调仍需在本地 DB 启动后执行。
 
 **compatibility 小结**：**`/api/v1/services*`** 与 **`/api/v1/merchant/services*`** 在分条中均标为 **compatibility**（**非**新主链终局入口）。**旧** 粗报 **`POST /services/{id}/price-preview`** 仍为 **compatibility**；**新** 粗报以 **`POST /standard-services/{code}/quote-preview`** 为准（P1a）。
 
@@ -242,6 +243,18 @@
 
 ---
 
+## GET/POST/PUT/DELETE /api/v1/me/addresses
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT，地址必须属于当前用户
+- 请求：`GET /me/addresses` 返回地址簿；`POST /me/addresses` 新增；`PUT /me/addresses/{addressId}` 更新；`DELETE /me/addresses/{addressId}` 删除；`POST /me/addresses/{addressId}/default` 设为默认地址
+- 响应：地址字段使用 `id`、`label`、`contactPhone`、`address`、`lat`、`lng`、`doorplateImageUrl`、`isDefault`；删除默认地址时后端返回 `nextDefaultAddress`
+- 实现位置：`MeProfileController`
+- 前端使用位置：用户端资料页、下单前地址门禁
+
+---
+
 ## GET /api/v1/me/messages
 
 - 状态：implemented
@@ -277,7 +290,7 @@
 - 调用方：用户端
 - 权限：用户 JWT，订单必须属于当前用户
 - 请求：`merchantQuoteConfirmationId`
-- 响应：`orderNo`、`workflowStatus=waiting_payment_or_authorization`、`legacyWorkflowStatus=pending_payment`、`nextAction=pay`、`finalAmount`、`userPayable`、`confirmedServiceTime`、`paymentRequired`
+- 响应：`orderNo`、`workflowStatus=waiting_payment_or_authorization`、`legacyWorkflowStatus=pending_payment`、`nextAction=pay`、`finalAmount`、`platformFee`、`taxFee`、`userPayable`、`confirmedServiceTime`、`paymentRequired`
 - 实现位置：`MeCenterController@confirmMerchantQuote`、`OrderP1Service@confirmMerchantQuote`
 - 前端使用位置：`ep` 订单详情/订单中心 P1 新主链块
 
@@ -377,6 +390,8 @@
 - 状态：implemented
 - 调用方：用户端
 - 权限：用户 JWT
+- 请求：`orderNo`、`method`，可选 `mode=pay|pre_authorize`
+- 响应：`paymentNo`、`amount`、`status`、`paymentStatus`、`holdStatus`、`platformFeePercent`、`platformFee`、`taxFee`、`merchantSettlement`、`userPayable`
 - 实现位置：`PaymentController@intent`
 - 前端使用位置：去支付
 
@@ -387,8 +402,97 @@
 - 状态：implemented
 - 调用方：用户端
 - 权限：用户 JWT
-- 实现位置：`ReviewController@store`
+- 请求：`orderNo`、`rating|score`、`content`、`imageUrls`，可选 `publishToSquare` / `shareToSquare`、`squarePublishAnonymous`
+- 响应：`id`、`score`、`rating`、`squarePostId`、`squarePublishStatus`
+- 实现位置：`ReviewController@store`、`ReviewService@create`
 - 前端使用位置：评价
+
+---
+
+## P2/P3 交易、履约与信用最小切片（`implemented`）
+
+以下 **2026-05-05** 起在 `expatth-backend` 注册或作为已实现接口字段返回；这里的 `implemented` 表示接口与最小持久化切片可用，**不表示** `db/schema-plan.md` 的 P2/P3 目标表已经全部落地。
+
+当前持久化粒度：
+
+- 已落地：`yipai_orders` 扩展冻结/平台费/结算摘要字段、`yipai_reviews` 扩展广场发布摘要字段、`yipai_fulfillment_events` 履约事件表，以及既有商户信用事件链路。
+- 仍属目标模型方向：`payment_holds`、`settlement_records`、`customer_credit_events`、`square_distribution_jobs`、`workflow_definitions` 等独立表；落地前不得把这些表名当成已迁移事实。
+
+数据依赖 `2026_05_05_150000_add_p2_p3_order_flow_fields.php` 与 `StandardServiceP1aSeeder`。
+
+## POST /api/v1/orders
+
+- 状态：implemented（P2 动态推荐）
+- 调用方：用户端
+- 权限：用户 JWT
+- 追加行为：新主链订单会调用 `MerchantMatchingService`，按能力启用、`readyStatus`、服务区域、容量/档期、信用分、评分、距离生成 `MerchantCandidate`。
+- 追加响应/后续 GET：订单详情扩展块含 `matching`、`candidates[].matchScore`、`matchFactors`、`distanceKm`、`availabilityStatus`。
+- 实现位置：`OrderFlowService`、`MerchantMatchingService`、`OrderMainChainPresenter`
+- 前端使用位置：标准服务报价页、订单中心/详情
+
+## GET/POST/PUT /api/v1/merchant/capabilities*
+
+- 状态：implemented（P2 能力字段扩展）
+- 调用方：商家端
+- 权限：商家 JWT
+- 追加请求/响应：`readyStatus`、`timeSlots`、`blackoutDates`、`matchingPolicyCode`、`workflowPolicyCode`；保留 `serviceArea`、`capacityRule`、`extraDistanceRule`、`openDates`。
+- 实现位置：`MerchantCapabilityService`、`YipaiMerchantCapability`
+- 前端使用位置：`epmerchant` 能力管理页
+
+## GET/PUT /api/v1/merchant/availability
+
+- 状态：implemented（P2 availability 字段扩展）
+- 调用方：商家端
+- 权限：商家 JWT
+- 追加请求/响应：`readyStatus`、`capacityRule`、`timeSlots`、`blackoutDates`，保留 `openDates`。
+- 实现位置：`MerchantOrderService@getAvailability`、`MerchantOrderService@updateAvailability`
+- 前端使用位置：商家端可用性/能力配置
+
+## GET /api/v1/orders 与 GET /api/v1/orders/{orderNo}
+
+- 状态：implemented（P2/P3 展示字段扩展）
+- 调用方：用户端
+- 权限：用户 JWT
+- 追加响应：`serviceTitle`、`serviceTitleI18n`、`standardService`、`paymentHold`、`settlement`、`fulfillmentEvents`、候选 `matchScore/matchFactors/distanceKm/availabilityStatus`。
+- 实现位置：`OrderMainChainPresenter`、`FulfillmentEventService`
+- 前端使用位置：订单中心、订单详情、支付弹层
+
+## GET /api/v1/merchant/orders
+
+- 状态：implemented（P2/P3 展示字段扩展）
+- 调用方：商家端
+- 权限：商家 JWT
+- 追加响应：`pricing`、`fulfillmentEvents`、`settlement`、`creditImpact`，并允许 `paymentStatus=authorized` 的订单进入开始服务门禁。
+- 实现位置：`MerchantOrderService`
+- 前端使用位置：商家订单页
+
+## POST /api/v1/merchant/orders/{orderNo}/start-service 与 finish-service
+
+- 状态：implemented（P3 履约事件）
+- 调用方：商家端
+- 权限：商家 JWT
+- 追加行为：状态推进时写入 `yipai_fulfillment_events`，商家完成/用户完成等事件会更新商家信用。
+- 实现位置：`OrderWorkflowService`、`FulfillmentEventService`、`MerchantOrderService`
+- 前端使用位置：商家订单页
+
+## POST /api/v1/orders/{orderNo}/confirm-completion
+
+- 状态：implemented（P3 双方完成与结算）
+- 调用方：用户端
+- 权限：用户 JWT
+- 追加行为：支持已支付或已预授权订单确认完成；完成后触发商家结算、释放 hold、写入履约事件和信用事件。
+- 实现位置：`MeCenterController@confirmOrderCompletion`、`OrderWorkflowService`、`PaymentSettlementService`
+- 前端使用位置：订单中心
+
+## POST /api/v1/merchant/reviews
+
+- 状态：implemented
+- 调用方：商家端
+- 权限：商家 JWT，订单必须属于当前商家且已完成
+- 请求：`orderNo`、`rating|score`、`content`、可选 `imageUrls`、`publishToSquare`、`squarePublishAnonymous`
+- 响应：`reviewId`、`score`、`rating`、`reviewType=merchant_to_customer`、`squarePostId`、`squarePublishStatus`
+- 实现位置：`MerchantPortalController@createReview`、`ReviewService@createMerchantReview`
+- 前端使用位置：`epmerchant` 商家订单页
 
 ---
 

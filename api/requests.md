@@ -27,9 +27,9 @@
 
 本轮 `/teamwork` 的 **P1** 把当前交易主链路从 P1b 推进到可联调的最小完整阶段：
 
-- **已实现**：R-009、R-011、R-012、R-013、R-014、R-015、R-019。
+- **已实现**：R-004、R-009、R-011、R-012、R-013、R-014、R-015、R-019。
 - **已完成并作为依赖**：R-005、R-006、R-007、R-008、R-010、R-018。
-- **不纳入本轮必须完成**：R-004（商户评价客户，仍 draft）、R-016（availability capacity/timeSlots，仍 proposed）、R-017（GET quote-preview 旁路，仍 draft）。这些不得被前端伪装为已完成。
+- **不纳入本轮必须完成**：R-016（availability capacity/timeSlots 目标模型仍 accepted，当前为商家可用性字段最小切片）、R-017（GET quote-preview 旁路，仍 draft）。这些不得被前端伪装为完整目标模型已完成。
 - **验收链路**：用户创建订单 -> 商家看到候选 -> 商家提交 MerchantQuoteConfirmation -> 用户确认报价 -> 订单进入 `waiting_payment_or_authorization`；同时能力配置、信用只读、售后发起已有真实后端路由和前端入口。
 
 ---
@@ -88,9 +88,9 @@
 - 响应字段草案：成功态与主评 id。
 - 失败场景：403 非本商户单、订单态不允许。
 - 影响页面：商家端订单完结后评价。
-- 状态：draft
+- 状态：implemented
 - 关联合同：merchant-api
-- 关联代码：未接路由（以实际 PR 为准）
+- 关联代码：`MerchantPortalController@createReview`、`ReviewService@createMerchantReview`、`POST /api/v1/merchant/reviews`、`epmerchant` 商家订单页评价客户入口
 
 ---
 
@@ -166,7 +166,7 @@
 - 背景：用户在 **waiting_user_confirmation** 态接受**唯一**或**主**确认单，以进入 **waiting_payment_or_authorization**（见 `state-machine`）。
 - 需要的接口：`POST /api/v1/orders/{orderNo}/confirm-merchant-quote`
 - 请求字段草案： **`merchantQuoteConfirmationId`**（必）；可选 **`acceptedAmount`** 仅当产品要求用户勾金额（默认以后端 MQC 为准，**待决策**）。
-- 响应字段草案：`orderNo`、`workflowStatus`、`nextAction`、**`finalAmount`/`userPayable`**、**`confirmedServiceTime`**、`paymentRequired`。
+- 响应字段草案：`orderNo`、`workflowStatus`、`nextAction`、**`finalAmount` / `platformFee` / `taxFee` / `userPayable`**、**`confirmedServiceTime`**、`paymentRequired`。
 - 失败场景：422 订单态不允许、**`EX_ORDER_MQC_NOT_ALLOWED`**、**`EX_CANDIDATE_EXPIRED`/`EX_MQC_DUPLICATE`/`EX_USER_CONFIRM_DUPLICATE`**（见 `error-codes`）；409 多确认单竞态（**待决策** 定唯一策略）。
 - 待决策点：一订单多商家并行报价时，是否只允许一条 **accepted** MQC。
 - 影响页面：认价、去支付。
@@ -289,7 +289,7 @@
 - 失败场景：422 结构非法、时区/日期不合法。
 - 待决策点：与 **现网** `bookable-days` 用户端接口的**兼容**与**废弃**时间；曼谷时区单一源。
 - 影响页面：商家日历、用户选日/匹配。
-- 状态：**proposed**（合同方向已写 `merchant-api` §3；**字段**未死锁）
+- 状态：**accepted**（P2：与 R-021 合并推进；字段按 merchant-api §2–3 和后端实现收敛）
 - 关联合同：merchant-api §3
 - 关联代码：现网 `getAvailability`/`updateAvailability`（**implemented** 行为不变至 P1）
 
@@ -338,6 +338,111 @@
 
 ---
 
+## R-20260428-020 P2 动态推荐与匹配快照
+
+- 来源角色：产品 / Backend API / 用户端 / 商家端
+- 背景：用户不直接选商家；平台需要按商家能力、星级、服务质量、响应速度、距离、价格、档期与就绪状态生成候选，并保存推荐原因，避免推荐结果不可解释。
+- 需要的接口：延续 `POST /api/v1/orders` 创建订单后的候选生成；订单列表/详情通过 R-012 暴露推荐摘要；商家端通过 R-014 读取候选待办。
+- 请求字段草案：无新增用户必填字段；推荐输入来自 `RequirementPayload`、`serviceAddress`、`MerchantCapability`、信用档案、档期与价格规则。
+- 响应字段草案：订单扩展块中可含 `matching.factors[]`、`matching.generatedAt`、`candidates[].matchScore`、`candidates[].distanceKm`、`candidates[].responseScore`、`candidates[].availabilityStatus`。
+- 失败场景：无可用商家、档期冲突、能力禁用、服务区域不覆盖。
+- 影响页面：用户订单详情、商家 order-requests、运营审计。
+- 状态：implemented（P2：后端候选匹配、用户/商家展示切片已接；真实 DB E2E 仍需执行）
+- 关联合同：`docs/fulfillment-flow.md`、`docs/state-machine.md`、`api/user-api.md`、`api/merchant-api.md`
+- 关联代码：`MerchantMatchingService`、`OrderFlowService`、`OrderMainChainPresenter`、`MerchantOrderRequestService`、`ep` 订单展示、`epmerchant` 待办卡片
+
+---
+
+## R-20260428-021 商家可用性、容量与就绪状态
+
+- 来源角色：产品 / 商家端 / Backend API
+- 背景：R-016 只定义了 capacity/timeSlots 方向；P2 需要明确商家是否可接单、某能力是否可服务、档期是否足够支撑匹配。
+- 需要的接口：扩展 `GET/PUT /api/v1/merchant/availability` 与 `GET/POST/PUT /api/v1/merchant/capabilities*`；不新增平行日历接口。
+- 请求字段草案：`readyStatus`、`capacityRule`、`timeSlots`、`blackoutDates`、`serviceArea`、`extraDistanceRule`。
+- 响应字段草案：与请求对称；候选和订单详情只暴露摘要，不暴露商家内部排班全部细节。
+- 失败场景：422 日期/时区非法、容量规则非法、能力已禁用、审核态不允许修改。
+- 影响页面：商家能力配置、商家日历、用户匹配。
+- 状态：implemented（P2：能力与 availability 字段已接；真实 DB E2E 仍需执行）
+- 关联合同：merchant-api §2–3，R-016
+- 关联代码：`MerchantCapabilityService`、`MerchantOrderService@getAvailability/updateAvailability`、`YipaiMerchantCapability`、`YipaiMerchant`、`epmerchant` 能力表单
+
+---
+
+## R-20260428-022 行业 WorkflowDefinition 与策略注册表
+
+- 来源角色：产品 / Backend API
+- 背景：空调清洗、保洁等行业需要不同字段、步骤和计价逻辑；不能为每个行业写硬编码控制器。
+- 需要的接口：无独立用户接口；由 `RequirementTemplate`、`POST quote-preview`、`POST orders`、商家能力和后端策略服务共同消费。
+- 请求字段草案：首批样板 `aircon_cleaning` 与 `home_cleaning`：空调清洗含 `propertyType`、`unitCount`、`distanceKm`；保洁含 `propertyType`、`areaSqm`、`cleaningType`。
+- 响应字段草案：RequirementTemplate 返回可渲染字段；QuotePreview 返回分项计价和策略 code 摘要。
+- 失败场景：模板版本不存在、策略 code 未注册、payload 与模板不匹配。
+- 影响页面：标准服务报价页、创建订单、商家能力规则。
+- 状态：implemented（P2：两个样板模板与 pricing override 已接；完整 WorkflowDefinition 独立表仍可后续增强）
+- 关联合同：user-api §2–4、merchant-api §2
+- 关联代码：`StandardServiceP1aSeeder`、`StandardServicePreviewService`、`ServiceProcessPricingService`
+
+---
+
+## R-20260428-023 平台代管、平台 1% 收益与结算
+
+- 来源角色：产品 / Backend API / 用户端 / 商家端
+- 背景：用户锁定订单后，款项进入平台代管；平台按服务小计收取 1% 服务费作为平台收益，并按服务小计收取 7% 税费，服务完成后向商家结算服务小计。
+- 需要的接口：`POST /api/v1/payments/intent` 扩展支付/预授权模式；订单详情返回 `pricing.amount`、`pricing.platformFee`、`pricing.taxFee`、`pricing.total` 与 `pricing.merchantSettlement`；后端结算由履约完成触发。
+- 请求字段草案：`orderNo`、`method`、可选 `mode`（`pay` / `pre_authorize`，以后端渠道为准）。
+- 响应字段草案：`holdStatus`、`platformFeePercent`、`platformFee`、`taxFee`、`merchantSettlement`、`userPayable`、`paymentStatus`。
+- 失败场景：订单态不允许付款、金额过期、MQC 未接受、重复冻结、余额不足。
+- 影响页面：用户支付、订单详情、商家钱包、结算记录。
+- 状态：implemented（P2：payment intent 与 wallet pay 返回冻结/平台收益摘要；真实渠道预授权仍按支付渠道后续增强）
+- 关联合同：user-api §6、state-machine §5
+- 关联代码：`PaymentController@intent`、`PaymentSettlementService`、`OrderPricing`、`OrderP1Service`、`OrderMainChainPresenter`、`ep` 支付弹层
+
+---
+
+## R-20260428-024 履约事件、异常惩罚与信用更新
+
+- 来源角色：产品 / Backend API / 商家端 / 用户端
+- 背景：服务开始、完工、迟到、未履约、售后判责等必须形成事件流，并影响商家推荐等级和信用分；用户侧恶意行为也要进入信用事件。
+- 需要的接口：延续商家 `start-service`、`finish-service`、用户 `confirm-completion`、`after-sales`；可增加内部事件记录，不暴露任意状态推进接口给前端。
+- 请求字段草案：动作接口可带 `remark`、`occurredAt`、`evidence`；惩罚由后端策略计算，不由前端传扣分。
+- 响应字段草案：订单当前 `workflowStatus`、`fulfillmentEvents[]` 摘要、`creditImpact` 摘要。
+- 失败场景：状态不允许、未支付不可开始、重复完成、售后锁定、非订单商家或非本人操作。
+- 影响页面：商家订单、用户订单、信用档案、售后。
+- 状态：implemented（P3：履约事件与商家信用事件已接；用户信用事件可后续独立扩展）
+- 关联合同：state-machine §5.1–5.2、merchant-api §6、user-api §7–8
+- 关联代码：`FulfillmentEventService`、`YipaiFulfillmentEvent`、`OrderWorkflowService`、`MerchantOrderService`、`OrderP1Service`、`OrderMainChainPresenter`
+
+---
+
+## R-20260428-025 双向互评与广场脱敏分发
+
+- 来源角色：产品 / 用户端 / 商家端 / Backend API
+- 背景：服务完成后用户评价商家、商家评价用户，评价和服务摘要可选择同步到广场，但必须脱敏。
+- 需要的接口：用户侧延续 `POST /api/v1/reviews`；商家侧实现 R-004 `POST /api/v1/merchant/reviews`；广场分发由评价请求可选字段或后端任务触发。
+- 请求字段草案：`orderNo`、`rating`、`content`、`imageUrls`、可选 `publishToSquare`、`squarePublishAnonymous`。
+- 响应字段草案：`reviewId`、`squarePostId`、`squarePublishStatus`。
+- 失败场景：订单未完成、重复评价、非本人/非本商家、隐私字段命中拒绝发布。
+- 影响页面：用户评价页、商家订单详情、广场。
+- 状态：implemented（P3：用户评价广场分发和商家评价客户已接；脱敏策略为当前最小实现）
+- 关联合同：user-api §9、merchant-api R-004、registry 现有 square/reviews
+- 关联代码：`ReviewService`、`MerchantPortalController@createReview`、`POST /api/v1/reviews`、`POST /api/v1/merchant/reviews`、`ep` 评价请求、`epmerchant` 商家订单页
+
+---
+
+## R-20260428-026 订单服务身份与展示名标准化
+
+- 来源角色：用户端 / Backend API / Shared
+- 背景：用户端支付弹层曾把订单里的内部 code `on-site-cleaning` 展示成「服务」，说明订单响应里标准服务身份与展示名不够稳定。前端不得靠局部 code-to-label map 修一个漏一个。
+- 需要的接口：扩展 `GET /api/v1/orders`、`GET /api/v1/orders/{orderNo}`、`POST /api/v1/orders`、`POST /api/v1/payments/intent` 的订单摘要来源；如支付 intent 返回订单快照，也必须使用同一 presenter。
+- 请求字段草案：无新增用户入参。
+- 响应字段草案：订单对象稳定包含 `standardServiceCode`、`serviceTitle`（按 locale 或后端默认 locale 解析）、可选 `standardService` 摘要；legacy `serviceType` / 类目 code 只能作为调试或兼容字段，不作为用户展示名。
+- 失败场景：订单关联不到 StandardService 时，后端返回可解释的兼容展示名与 `legacyServiceCode`，同时记录数据修复需求；不得把内部 code 原样交给客户端当文案。
+- 影响页面：用户订单中心、订单详情、支付弹层、评价页、商家订单待办。
+- 状态：implemented（后端 `OrderMainChainPresenter` 稳定返回 `serviceTitle` / `serviceTitleI18n` / `standardService`；用户端已删除本地 code-to-label map）
+- 关联合同：`docs/boundaries.md` §6、`api/user-api.md` §0
+- 关联代码：`OrderMainChainPresenter`、`StandardServiceOrderPayloadResolver`、`ep/src/lib/orders-pickers.ts`
+
+---
+
 ## 维护
 
 - 新需求：**追加**新 `R-` 号（**`R-20260428-020` 起**）。  
@@ -346,7 +451,7 @@
 
 ---
 
-## P1b 状态总览（005–019，便于检索）
+## P1b/P2/P3 状态总览（005–026，便于检索）
 
 | R-     | 简述                         | 状态         |
 |--------|------------------------------|--------------|
@@ -361,7 +466,14 @@
 | 013    | merchant capabilities        | **implemented** |
 | 014    | order-requests + MQC submit  | **implemented** |
 | 015    | credit-profile               | **implemented** |
-| 016    | availability 演进            | **proposed** |
+| 016    | availability 演进            | **accepted** |
 | 017    | GET quote-preview 旁路/幂等   | **draft**    |
 | 018    | ep BFF 对齐 standard…        | **implemented** |
 | 019    | 路由与 query 迁移            | **implemented** |
+| 020    | 动态推荐与匹配快照           | **implemented** |
+| 021    | 可用性、容量与就绪状态       | **implemented** |
+| 022    | WorkflowDefinition 与策略注册 | **implemented** |
+| 023    | 平台代管、平台 1% 收益与结算 | **implemented** |
+| 024    | 履约事件、异常惩罚与信用更新 | **implemented** |
+| 025    | 双向互评与广场脱敏分发       | **implemented** |
+| 026    | 订单服务身份与展示名标准化   | **proposed** |
