@@ -48,6 +48,8 @@
 
 - `payments/intent` 分项校验；详情 **`GET /api/v1/orders/{orderNo}`**（已替代公开 `GET /api/v1/orders/{id}`）。
 
-### 2026-03-25 / 03-29 · 资料与地址
+### 2026-03-25 / 03-29 · 资料、地址与实名
 
-- `me/profile`、`me/addresses`、`maps/config`、OSS `user-avatar` / `user-doorplate`；旧 `me/verification`、`me/location` 已下线。
+- `me/profile`、`me/addresses`、`maps/config`、OSS `user-avatar` / `user-doorplate` 继续作为主资料和地址簿接口。
+- `GET/POST /api/v1/me/location` 已在 R-030 作为用户位置 BFF 上游恢复，内部复用默认地址和 `yipai_users.location`。
+- `GET/POST /api/v1/me/verification` 已在 R-030 作为用户实名入口恢复，写入 `yipai_user_verifications`。

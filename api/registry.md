@@ -407,6 +407,36 @@
 - 实现位置：`ReviewController@store`、`ReviewService@create`
 - 前端使用位置：评价
 
+## GET /api/v1/merchants/featured
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：公开接口，可带可选用户 token
+- 请求：query 可选 `limit`、`lat`、`lng`、`locale`
+- 响应：商家数组；每项含 `id`、`name`、`intro`、`rating`、`orderCount`、`onlineStatus`、`areas`、`serviceTypes`、`distanceKm`、`responseMinutes`、`imageUrl`、`featuredServiceTitle`
+- 实现位置：`MerchantDiscoveryController@featured`、`MerchantDiscoveryService`
+- 前端使用位置：首页推荐商家 BFF `ep/src/app/api/merchants/featured/route.ts`
+
+## GET/POST /api/v1/me/location
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT
+- 请求：GET 无业务入参；POST `address`，可选 `lat`、`lng`、`placeId`、`label`、`contactPhone`、`doorplateImageUrl`、`isDefault`
+- 响应：`location` 和 `address`；含 `id`、`label`、`contactPhone`、`address`、`lat`、`lng`、`placeId`、`doorplateImageUrl`、`isDefault`、`updatedAt`
+- 实现位置：`UserLocationController`、`UserLocationService`、`yipai_user_addresses`
+- 前端使用位置：用户端位置 BFF `ep/src/app/api/me/location/route.ts`
+
+## GET/POST /api/v1/me/verification
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT
+- 请求：GET 无业务入参；POST `realName`、`idNumber`、`documentFrontUrl`，可选 `documentBackUrl`、`selfieUrl`
+- 响应：`applicationNo`、`status`、`realName`、`idNumber`、证件 URL、`reviewNote`、`submittedAt`、`reviewedAt`、`editable`
+- 实现位置：`UserVerificationController`、`UserVerificationService`、`yipai_user_verifications`
+- 前端使用位置：用户端实名 BFF `ep/src/app/api/me/verification/route.ts`
+
 ---
 
 ## P2/P3 交易、履约与信用最小切片（`implemented`）
@@ -462,7 +492,7 @@
 - 状态：implemented（P2/P3 展示字段扩展）
 - 调用方：商家端
 - 权限：商家 JWT
-- 追加响应：`pricing`、`fulfillmentEvents`、`settlement`、`creditImpact`，并允许 `paymentStatus=authorized` 的订单进入开始服务门禁。
+- 追加响应：当前代码稳定返回 `pricing`、开始服务门禁字段、目标 `workflowStatus`、`legacyWorkflowStatus`、`nextAction`、`fulfillmentEvents`、`settlement`、`creditImpact`、`canReviewCustomer` / `merchantReview`；允许 `paymentStatus=authorized` 的订单进入开始服务门禁。
 - 实现位置：`MerchantOrderService`
 - 前端使用位置：商家订单页
 
@@ -471,9 +501,19 @@
 - 状态：implemented（P3 履约事件）
 - 调用方：商家端
 - 权限：商家 JWT
-- 追加行为：状态推进时写入 `yipai_fulfillment_events`，商家完成/用户完成等事件会更新商家信用。
+- 追加行为：状态推进时写入 `yipai_fulfillment_events`；动作响应返回目标 `workflowStatus`、`legacyWorkflowStatus`、`fulfillmentEvents`、`settlement`、`creditImpact`。
 - 实现位置：`OrderWorkflowService`、`FulfillmentEventService`、`MerchantOrderService`
 - 前端使用位置：商家订单页
+
+## POST /api/v1/merchant/orders/{orderNo}/failure-action
+
+- 状态：implemented（R-036 商家异常动作）
+- 调用方：商家端
+- 权限：商家 JWT
+- 请求：`action` 为 `report_late`、`report_no_show`、`request_reschedule`、`dispute_opened`、`return_to_in_service`；可选 `reasonCode`、`reasonText`、`evidence[]`、`proposedServiceTime`。
+- 响应：`workflowStatus`、`legacyWorkflowStatus`、`failureEvent`、`fulfillmentEvents`、`allowedNextActions`、`nextAction`、`customerVisibleMessage`。
+- 实现位置：`MerchantPortalController@failureAction`、`MerchantOrderFailureActionService`、`MerchantOrderFailureActionRequest`
+- 前端使用位置：商家订单异常处理入口
 
 ## POST /api/v1/orders/{orderNo}/confirm-completion
 
@@ -508,6 +548,10 @@
 ## /api/v1/merchant/*（节选）
 
 - **`GET/POST /merchant/auth/*`**、**`GET/POST /merchant/profile`**、**`POST /merchant/verification`**、**`GET/PUT /availability`**、**`GET/POST/PUT /merchant/services`**、**`GET /merchant/orders` + 订单动作**：状态 **implemented** 或 **compatibility**（**merchant/services* = 商家服务配置，非** StandardService 主入口**）。
+- **`GET/POST /merchant/profile`**：profile 已返回并保存 `location`（`baseAddress`、`placeId`、`lat`、`lng`、`serviceRadiusMeters`、`areas[]`、`locationVerified`）；资料保存不触发实名审核。
+- **`POST /merchant/verification`**：实名提交与 profile 解耦；必填 `ownerName`、`idNumber`、`businessLicenseUrl`、`documentFrontUrl`、`documentBackUrl`、`selfieUrl`，pending/approved 不允许重复提交。
+- **商家端 BFF `POST /api/merchant/preferences/locale`**：上游为 `POST /api/v1/merchant/preferences/locale`。
+- **商家端 BFF `GET /api/merchant/standard-services`**：只读代理公共 `GET /api/v1/standard-services`，供 MerchantCapability 表单选择 `standardServiceCode`。
 - **compatibility 标注**：`GET/POST/PUT /api/v1/merchant/services` 与 `GET /api/v1/merchant/services/{serviceId}` — 与 **MerchantCapability** 演进衔接；**不是** C 端「选标准品」的终局。
 - 实现位置：`MerchantPortalController`、`MerchantAuthController`、`MerchantWalletController` 等（见 `routes/api.php`）。
 

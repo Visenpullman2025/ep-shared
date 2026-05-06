@@ -108,6 +108,7 @@ P2/P3 目标补充：
 | `late` | 迟到。 |
 | `no_show` | 未履约或未到场。 |
 | `dispute_opened` | 售后或争议已开启。 |
+| `reschedule_requested` | 商家或平台发起改约，等待对方确认。 |
 | `penalty_applied` | 平台已应用惩罚。 |
 | `settlement_released` | 平台已释放结算。 |
 

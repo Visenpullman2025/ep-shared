@@ -1,91 +1,90 @@
 # Backend API 工作报告
 
-状态：P1a 已完成（StandardService / RequirementTemplate / QuotePreview 最小骨架）。
+最后更新：2026-05-07
+
+状态：current-phase audit。本文只记录当前 MySQL/API 是否支撑现有前端流程；PostgreSQL 能力库任务已移入下一阶段 `pgsql plan`。
+
+职责边界：后端 API、Laravel 路由、迁移状态、与前端 BFF 的支撑关系。未实现接口不得写入 `api/registry.md`。
 
 ## 1. 本轮目标
 
-- 按 `.cursorrules` **P1a**：**最小可读骨架**，优先 **StandardService**、**RequirementTemplate**、**QuotePreview**（落库 + 可联调 API）。
-- 实现位置：`expatth-backend`（迁移、模型、控制器、复用 `ServiceProcessPricingService` 粗算价、分类种子）。
-- 同步 **expatth-shared**：`api/registry.md`、`api/requests.md`（R-005～007）、`api/user-api.md`（§0.1）、本报告。
+- 核对当前 Laravel API 是否支撑用户端和商家端主流程。
+- 核对当前 MySQL 表结构是否支撑标准服务、报价、下单、地址、支付、商家确认、履约、评价、广场和后台查看。
+- 把 PostgreSQL 同步、AI 语义搜索、距离搜索任务树明确放到下一阶段 `pgsql plan`。
 
 ## 2. 修改文件清单
 
 | 文件路径 | 操作 | 说明 |
 |---|---|---|
-| `expatth-backend/database/migrations/2026_04_28_150434_create_yipai_standard_services_table.php` | 新增 | 标准服务表 |
-| `expatth-backend/database/migrations/2026_04_28_150435_create_yipai_requirement_templates_table.php` | 新增 | 需求模板表 |
-| `expatth-backend/database/migrations/2026_04_28_150436_create_yipai_quote_previews_table.php` | 新增 | 粗报价快照表 |
-| `expatth-backend/app/Models/YipaiStandardService.php` | 新增 | |
-| `expatth-backend/app/Models/YipaiRequirementTemplate.php` | 新增 | |
-| `expatth-backend/app/Models/YipaiQuotePreview.php` | 新增 | |
-| `expatth-backend/app/Services/Common/StandardServicePreviewService.php` | 新增 | 粗报价落库 + 接计价 |
-| `expatth-backend/app/Http/Controllers/Api/V1/StandardServiceController.php` | 新增 | 四接口 |
-| `expatth-backend/database/seeders/StandardServiceP1aSeeder.php` | 新增 | 从 `yipai_service_categories` 造标准行与模板 |
-| `expatth-backend/routes/api.php` | 修改 | 注册 `standard-services*` |
-| `expatth-shared/api/registry.md` | 修改 | P1a 四接口 **implemented** + 总述 |
-| `expatth-shared/api/requests.md` | 修改 | R-005/006/007 **implemented** + 总览表 |
-| `expatth-shared/api/user-api.md` | 修改 | §0.1 与 P1a 联调条件 |
-| `expatth-shared/reports/backend-api.md` | 修改 | 本报告 |
+| `ep-shared/db/postgres-clean-rewrite.md` | 更新 | 明确 PostgreSQL 任务树属于下一阶段，不进入当前前端流程验证。 |
+| `ep-shared/db/schema-plan.md` | 更新 | 补充当前阶段 MySQL 支撑范围与下一阶段能力库边界。 |
+| `ep-shared/api/requests.md` | 更新 | R-027 至 R-029 保持 proposed 并归入 `pgsql plan`；R-030 记录当前 BFF/API 缺口。 |
+| `ep-shared/PROJECT_RULES.md` | 更新 | 越界审计记录登记当前用户端无支撑 BFF。 |
+| `ep-shared/reports/*.md` | 更新 | 同步当前阶段后端、用户端、商家端、数据库审计结论。 |
 
 ## 3. 明确未修改范围
 
-- **未** 做 P1b（`POST /orders` 新体）、P1c（**MerchantCapability** / **Candidate** / **MQC**）、P1d（状态映射/支付闸口/售后 HTTP）。
-- **未** 改 `OrderController`、**未** 给 `yipai_orders` 加列（P1b+）。
-- **未** 新增 `api/requests.md` 的 **R-** 号（**未** 使用 **R-20260428-021**）。
+- 未实现 PostgreSQL 能力库、同步任务、AI embedding、距离搜索或推荐读模型。
+- 未把 `DB_CONNECTION` 改为 PostgreSQL。
+- 未把 R-027、R-028、R-029 写入 registry implemented。
+- 已补实现 R-030：`GET /api/v1/merchants/featured`、`GET/POST /api/v1/me/verification`、`GET/POST /api/v1/me/location`。
 
 ## 4. api/requests.md 变更
 
 | R 编号 | 标题 | 操作 | 状态 |
 |---|---|---|---|
-| R-20260428-005 | 标准服务列表+详情 | 状态改为 **implemented**；补 **关联代码** | implemented |
-| R-20260428-006 | requirement-template | 同上 | implemented |
-| R-20260428-007 | quote-preview | 同上 | implemented |
-| 其他 R- | - | 无 | - |
+| R-20260428-027 | PostgreSQL 能力读模型同步 | 归入下一阶段 `pgsql plan` | proposed |
+| R-20260428-028 | 能力库 6 小时自动同步调度 | 归入下一阶段 `pgsql plan` | proposed |
+| R-20260428-029 | AI 语义搜索能力库 | 归入下一阶段 `pgsql plan` | proposed |
+| R-20260428-030 | 当前用户端无支撑 BFF 清理或补合同 | 补后端实现并登记 registry | implemented |
 
 ## 5. 编号校验
 
-- 修改前 `api/requests.md` **维护** 段写明的**下一新号**为：**R-20260428-018**（在 **R-017** 之后追加时）。
-- 本轮**未**新增 R- 条目，**无** 新编号落地。
-- **无** 重复编号。
+- 当前最后编号：R-20260428-030。
+- 本轮不新增平行编号。
+- R-027 至 R-029 不是当前阶段待实现项；执行前必须重新确认进入 `pgsql plan`。
 
 ## 6. 合同变更
 
 | 合同文件 | 变更点 | 是否已同步 requests |
 |---|---|---|
-| `api/user-api.md` | §0.1：P1a 路由**可**联调；**须** migrate + seeder | 是（R-005～007 已 **implemented**） |
-| `api/registry.md` | 四接口 **implemented** 分条 | 是 |
+| `api/requests.md` | 当前阶段 R-030 API 缺口更新为已实现；R-027 至 R-029 仍归类到下一阶段 pgsql plan | 是 |
+| `api/registry.md` | 登记 R-030 三组真实后端接口 | 是 |
+| `db/schema-plan.md` | MySQL 当前支撑范围、PostgreSQL 下一阶段边界 | 是 |
+| `db/postgres-clean-rewrite.md` | `pgsql plan` 下一阶段任务树 | 是 |
 
 ## 7. 现网可联调 / 不可联调
 
-**可联调**（部署本后端并 **migrate** + **`php artisan db:seed --class=StandardServiceP1aSeeder`** 后）：
+当前 Laravel route list 支撑的主流程：
 
-- `GET /api/v1/standard-services`
-- `GET /api/v1/standard-services/{code}`
-- `GET /api/v1/standard-services/{code}/requirement-template`
-- `POST /api/v1/standard-services/{code}/quote-preview`（body 须含**非空** `requirementPayload`；结构需与 **question_template** 计价及 `processData` 习惯兼容）
+- 用户端标准服务：`GET /api/v1/standard-services`、详情、requirement-template、quote-preview。
+- 用户端账户和订单：注册、登录、`me/profile`、`me/addresses`、订单创建、列表、详情、取消、售后、确认商家报价、确认完成、评价。
+- 用户端支付和钱包：`POST /api/v1/payments/intent`、钱包余额、流水、充值、提现。
+- 商家端：商家认证、资料、能力、可用性、order-requests、MQC 提交、订单开始/完成/取消/确认、信用档案、钱包、评价客户。
+- 公共和广场：分类、地图配置、广场列表、评论、关注、评论/商家评价读取。
+- 上传策略：用户 `GET /api/v1/uploads/oss-policy`，商家 `GET /api/v1/merchant/uploads/oss-policy`。
 
-**仍不可** 作为**完整**新主链 E2E：
+R-030 已补齐：
 
-- `POST /orders` **仅** 新体（P1b）
-- `confirm-merchant-quote`、**after-sales**、**merchant** 能力/待办/**MQC**（P1c/P1d）
-- 订单 **GET** 的 **R-012** 扩展块（未做）
+- `GET /api/v1/merchants/featured`：首页推荐商家 BFF 上游，按真实商家、能力、订单完成数、位置距离输出。
+- `GET/POST /api/v1/me/verification`：用户实名入口，写入 `yipai_user_verifications`。
+- `GET/POST /api/v1/me/location`：用户位置入口，复用默认地址和 `yipai_users.location`。
 
 ## 8. 只读检查范围
 
-| 仓库 | 文件/模块 | 发现 |
-|---|---|---|
-| `expatth-backend` | `ServiceProcessPricingService` | P1a **复用** 现有 **question_template** 策略；非该策略仍 **422**（与旧行为一致） |
-| `expatth-shared` | `db/schema-plan.md` | 未**强制**改文；**表**与实现**一致**（`yipai_*` 前缀） |
+| 检查项 | 结论 |
+|---|---|
+| Laravel route list | R-030 三组路径已出现在 `api/v1` route list。 |
+| MySQL migrate status | P1/P2/P3 主链迁移均 Ran；PostgreSQL 扩展迁移和本地 demo catalog migration 已从活动迁移中删除；商家位置字段迁移已 Ran。 |
+| MySQL 表概况 | RDS MySQL 8.0.36，数据库 `ep`，54 张表，含订单、报价、能力、候选、履约、评价、钱包、广场、Dcat 表。 |
+| registry 一致性 | R-030 仅登记已实现接口；R-027 至 R-029 保持非 implemented。 |
 
 ## 9. 阻塞点
 
 | 阻塞点 | 影响角色 | 需要谁处理 | 对应 R 编号 |
 |---|---|---|---|
-| 无 | - | - | - |
+| R-030 数据迁移依赖远程 MySQL | 用户端实名入口 | 已执行新增 `yipai_user_verifications` migration | R-030 |
 
 ## 10. 下一步建议
 
-- **P1b**：`POST /api/v1/orders` 接 **`standardServiceCode` + `requirementPayload` + `quotePreviewId`**，**`yipai_orders`** 加外键列；**旧** `serviceId` **保留** 兼容。  
-- **P1c**：**MerchantCapability** 表 + 商家 **HTTP** 最小闭环。  
-- **BFF/前端**：在 **expath** 将入口从**仅** `serviceId` 迁到 **`standardServiceCode`**（在 **api/requests** 中**另开** R- 条，**自 R-20260428-018 起** 按**维护**段编号）。  
-- 部署检查清单：**migrate** → **StandardServiceP1aSeeder**（或**等价**导数）→ 打 `GET /api/v1/standard-services` 验 **200**。
+R-030 已补后端实现。下一步继续按当前 MySQL 主链验证用户端首页推荐、资料/地址、下单、订单状态和商家履约闭环；PostgreSQL 任务仍保留到下一阶段 `pgsql plan`。

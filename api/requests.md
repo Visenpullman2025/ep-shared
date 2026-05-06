@@ -1,6 +1,6 @@
 # API 需求池（唯一入口）
 
-最后更新：2026-05-05（P1 最小交易闭环已实现）
+最后更新：2026-05-07（当前阶段 MySQL 优先；pgsql plan 暂停）
 
 > **所有**待实现、待改字段、待补错误码、跨角色冲突，**只**写本文件；**禁止**只在聊天或 issue 里约定后直连改代码。  
 > 合同文档 **user-api / merchant-api** 为**稳定合同**；**缺口**仍回写本文件。  
@@ -443,6 +443,184 @@
 
 ---
 
+## 暂停：`pgsql plan`（R-027 至 R-029）
+
+以下 3 条已按 2026-05-07 决定暂停。当前阶段只推进 MySQL 业务事实源、Laravel API、用户端 BFF、商家端 BFF；不得把 R-027 至 R-029 写入 `api/registry.md` implemented，也不得保留 PostgreSQL-only migration 阻塞 MySQL migration。
+
+## R-20260428-027 PostgreSQL 能力读模型同步
+
+- 来源角色：产品 / Backend / 运营后台
+- 背景：当前确认 MySQL 继续作为业务事实源；PostgreSQL 只在距离搜索、推荐算法、AI 语义搜索和多语言模糊检索需要时作为能力读模型库，优先选择阿里云 RDS PostgreSQL。
+- 需要的接口：后端内部同步任务；Dcat 后台手动同步动作；可选只读同步状态接口。
+- 请求字段草案：自动任务无用户入参；手动同步动作可选 `scope`（`merchant_geo` / `recommendation_features` / `search_embeddings` / `all`）、`force`。
+- 响应字段草案：`syncRunId`、`scope`、`status`、`startedAt`、`finishedAt`、`sourceUpdatedSince`、`upsertedCount`、`failedCount`、`errorSummary`。
+- 失败场景：PostgreSQL 连接不可用、embedding provider 不可用、MySQL 源数据缺少 lat/lng、同步任务重复运行、Dcat 操作员权限不足。
+- 影响页面：Dcat 能力库同步页或按钮、运营推荐审计、未来搜索/推荐 API。
+- 状态：rejected（当前阶段暂停；重新启用时另开新 R）
+- 关联合同：`db/postgres-clean-rewrite.md`、`db/schema-plan.md`
+- 关联代码：待实现；建议后端新增 Artisan command / queued job / Dcat RowAction 或页面工具按钮。
+
+---
+
+## R-20260428-028 能力库 6 小时自动同步调度
+
+- 来源角色：产品 / Backend / 运维
+- 背景：能力库允许最终一致；早期不引入 CDC，默认每 6 小时从 MySQL 抽取变化数据 upsert 到 PostgreSQL 能力读模型。
+- 需要的接口：Laravel Scheduler / queue job；同步运行日志查询可与 R-027 共用。
+- 请求字段草案：无 HTTP 用户入参；调度参数 `intervalHours=6`、`scope=all`、`lockTtl`、`updatedSince`。
+- 响应字段草案：同步日志记录同 R-027。
+- 失败场景：上一轮未完成、锁超时、部分 scope 失败、PostgreSQL 写入冲突、embedding 生成限流。
+- 影响页面：Dcat 同步状态、运维日志、推荐/搜索能力。
+- 状态：rejected（当前阶段暂停；重新启用时另开新 R）
+- 关联合同：`db/postgres-clean-rewrite.md`
+- 关联代码：待实现；建议 `app/Console/Kernel.php` 或 Laravel 11 schedule bootstrap、`CapabilityReadModelSyncService`。
+
+---
+
+## R-20260428-029 AI 语义搜索能力库
+
+- 来源角色：产品 / Backend API / 用户端
+- 背景：搜索和推荐需要理解用户自然语言、服务文本、商家介绍和公开评价；PostgreSQL 能力库使用 pgvector 承载 embedding，不替代 MySQL 交易事实。
+- 需要的接口：后续可新增 `GET /api/v1/search` 或推荐 API；当前先实现内部 embedding 同步和索引表。
+- 请求字段草案：搜索接口待定；内部同步输入来自 MySQL 的 StandardService、RequirementTemplate、MerchantCapability、商家资料、公开评价和帮助内容。
+- 响应字段草案：搜索结果需返回 `standardServiceCode`、`merchantId`、`score`、`reason`、`matchedTextSummary`，不得暴露 embedding 原始向量。
+- 失败场景：embedding 缺失、语言不支持、向量服务限流、PostgreSQL pgvector 扩展不可用。
+- 影响页面：首页搜索、标准服务发现、推荐候选解释、运营调试。
+- 状态：rejected（当前阶段暂停；重新启用时另开新 R）
+- 关联合同：`db/postgres-clean-rewrite.md`、`db/schema-plan.md`
+- 关联代码：待实现；建议 `search_embeddings`、embedding provider adapter、PostgreSQL pgvector 查询服务。
+
+---
+
+## 当前阶段：MySQL/API/BFF 支撑缺口
+
+## R-20260428-030 当前用户端无支撑 BFF 清理或补合同
+
+- 来源角色：用户端 / Backend API / 审计
+- 背景：当前阶段审计发现用户端存在 BFF 调用后端未注册路径。按 API 固定闸门，这些入口不能被视为已完成；2026-05-07 已选择补后端实现。
+- 需要的接口：`GET /api/v1/merchants/featured`、`GET/POST /api/v1/me/verification`、`GET/POST /api/v1/me/location`。
+- 请求字段：
+  - `GET /merchants/featured`：query 可选 `limit`、`lat`、`lng`、`locale`。
+  - `GET /me/verification`、`GET /me/location`：无业务入参，用户 JWT。
+  - `POST /me/verification`：`realName`、`idNumber`、`documentFrontUrl`，可选 `documentBackUrl`、`selfieUrl`。
+  - `POST /me/location`：`address`，可选 `lat`、`lng`、`placeId`、`label`、`contactPhone`、`doorplateImageUrl`、`isDefault`。
+- 响应字段：
+  - featured merchants：`id`、`name`、`intro`、`rating`、`orderCount`、`onlineStatus`、`areas`、`serviceTypes`、`distanceKm`、`responseMinutes`、`imageUrl`、`featuredServiceTitle`。
+  - user verification：`applicationNo`、`status`、`realName`、`idNumber`、证件 URL、`reviewNote`、`submittedAt`、`reviewedAt`、`editable`。
+  - user location：`location` 和 `address`，含 `id`、`label`、`contactPhone`、`address`、`lat`、`lng`、`placeId`、`doorplateImageUrl`、`isDefault`、`updatedAt`。
+- 失败场景：401 用户未登录；422 入参不完整或已有实名审核中；推荐商家无可展示数据时返回空数组，不使用 mock。
+- 影响页面：首页推荐商家；用户端资料/位置相关潜在入口。
+- 状态：implemented
+- 关联合同：`PROJECT_RULES.md` 第 4 节 API 固定闸门；`reports/database-clean-rewrite-audit.md`
+- 关联代码：`ep/src/app/api/merchants/featured/route.ts`、`ep/src/app/api/me/verification/route.ts`、`ep/src/app/api/me/location/route.ts`、`epbkend/expatth-backend/routes/api.php`、`MerchantDiscoveryController`、`UserVerificationController`、`UserLocationController`
+
+---
+
+## R-20260428-031 商家偏好语言 BFF 上游路径修正
+
+- 来源角色：商家端 / Backend API / 审计
+- 背景：审计发现商家端 `POST /api/merchant/preferences/locale` BFF 曾请求用户端 `POST /api/v1/me/locale`。当前已改为商家域 `POST /api/v1/merchant/preferences/locale`，避免把商家会话打到用户鉴权域。
+- 需要的接口：保持商家端 BFF `POST /api/merchant/preferences/locale`，上游改为 `POST /api/v1/merchant/preferences/locale`。
+- 请求字段草案：`locale`，值为 `zh` / `en` / `th`。
+- 响应字段草案：`success`、`preferredLocale`。
+- 失败场景：401 商家未登录；422 locale 非法；后端保存失败。
+- 影响页面：商家端个人设置语言切换。
+- 状态：implemented
+- 关联合同：`api/merchant-api.md` §1、`api/registry.md` `/api/v1/merchant/*`
+- 关联代码：`epmerchant/src/app/api/merchant/preferences/locale/route.ts`、`epbkend/expatth-backend/routes/api.php`、`MerchantPortalController@updateLocale`
+
+---
+
+## R-20260428-032 商家订单响应与 P2/P3 履约/结算/信用摘要对齐
+
+- 来源角色：商家端 / Backend API / 审计
+- 背景：`api/registry.md` 已写 `GET /api/v1/merchant/orders` 追加返回 `pricing`、`fulfillmentEvents`、`settlement`、`creditImpact`。当前已由 `MerchantOrderService` 补齐列表项和动作响应：`workflowStatus` 返回 shared 目标态，`legacyWorkflowStatus` 保留数据库旧值，履约事件、结算摘要、信用影响、商家评价客户入口均由后端输出。
+- 需要的接口：扩展 `GET /api/v1/merchant/orders`；必要时同步动作响应 `POST /api/v1/merchant/orders/{orderNo}/start-service`、`finish-service`、`cancel`。
+- 请求字段草案：沿用现有分页和 status query。
+- 响应字段草案：列表项稳定包含目标 `workflowStatus`、可选 `legacyWorkflowStatus`、`pricing`、`fulfillmentEvents[]`、`settlement`、`creditImpact`、`canReviewCustomer` / `merchantReview`。
+- 失败场景：字段缺失导致商家端无法展示履约流水、结算状态、信用影响或错误判断下一步动作。
+- 影响页面：商家订单列表、履约动作、客户评价入口、商家钱包/结算解释。
+- 状态：implemented
+- 关联合同：`api/merchant-api.md` §6、`docs/state-machine.md`、`api/registry.md`
+- 关联代码：`MerchantOrderService::listOrders`、`MerchantOrderService::transitionMerchantOrderToState`、`OrderWorkflowStatusPresenter`、`FulfillmentEventService`、`PaymentSettlementService`、`epmerchant/src/app/[locale]/merchant/orders/*`
+
+---
+
+## R-20260428-033 商家能力配置的 StandardService 选择来源
+
+- 来源角色：商家端 / 产品 / Backend API
+- 背景：商家能力 `POST /api/v1/merchant/capabilities` 已要求 `standardServiceCode`，后端也校验标准服务存在；此前商家端能力页面让商家手填 code，没有从平台标准服务配置读取可选项。当前已通过商家 BFF 复用公共 `GET /api/v1/standard-services`，能力表单改为标准服务下拉选择。
+- 需要的接口：商家端能力页面应读取平台标准服务列表；可复用公共 `GET /api/v1/standard-services`，或新增商家端只读 BFF/路径但必须登记合同。
+- 请求字段草案：`locale`、可选 `categoryCode`、`onlyActive=true`。
+- 响应字段草案：`standardServiceCode`、`name`、`description`、`categoryCode`、`imageUrl`。
+- 失败场景：商家手填错误 code、启用无效能力、后端 422 频发、推荐链路没有可用 MerchantCapability。
+- 影响页面：商家能力配置、候选匹配、P2 推荐链路。
+- 状态：implemented
+- 关联合同：`api/merchant-api.md` §2、`api/user-api.md` §1、`docs/boundaries.md`
+- 关联代码：`epmerchant/src/app/api/merchant/standard-services/route.ts`、`MerchantCapabilityManager.tsx`、`MerchantCapabilityForm.tsx`、`MerchantCapabilityService`
+
+---
+
+## R-20260428-034 商家资料字段与位置采集补齐
+
+- 来源角色：商家端 / Backend API / 推荐匹配审计
+- 背景：当前 `POST /api/v1/merchant/profile` 只维护商家名称、联系电话、简介、在线状态和服务类型。数据库 `yipai_merchants` 已有 `lat`、`lng`、`areas`、`service_radius_meters`、`ready_status` 等字段，推荐服务也会用商家经纬度计算距离；但商家端资料页没有采集地址、经纬度、服务半径、服务区域，后端资料 API 也不更新这些字段。结果是匹配可生成候选，但距离可能为 `null`，服务范围校验也可能被跳过。
+- 需要的接口：扩展 `GET/POST /api/v1/merchant/profile` 或拆出 `GET/PUT /api/v1/merchant/location`，由后端保存商家营业/出发位置、经纬度、服务区域与默认服务半径。
+- 请求字段草案：`baseAddress`、`lat`、`lng`、`serviceRadiusMeters`、`areas[]`、可选 `placeId`。
+- 响应字段草案：`location` 对象，包含 `baseAddress`、`lat`、`lng`、`serviceRadiusMeters`、`areas`、`locationVerified`、`updatedAt`。
+- 失败场景：缺少经纬度、经纬度越界、地址解析失败、服务半径非法、商家未通过实名审核时不允许启用接单。
+- 影响页面：商家资料、商家能力配置、推荐候选、距离排序、上门服务调度。
+- 状态：implemented
+- 关联合同：`docs/boundaries.md`、`docs/state-machine.md`、`db/schema-plan.md`
+- 关联代码：`MerchantProfileService`、`UpdateMerchantProfileRequest`、`2026_05_07_090000_add_location_fields_to_yipai_merchants.php`、`epmerchant/src/app/[locale]/merchant/profile/info/page.tsx`
+
+---
+
+## R-20260428-035 商家实名提交流程与资料维护解耦
+
+- 来源角色：商家端 / Backend API / 审核流程审计
+- 背景：审计发现 `MerchantProfileService::updateProfile` 曾在每次保存资料时调用实名 pending upsert；缺字段时会把已有 pending 实名材料写成 `null`，没有 pending 时会创建空实名申请，并且会把非 pending 商家状态改回 `pending`。这会让普通资料保存影响实名审核，且缺少必填校验和审核状态保护。
+- 需要的接口：保留 `POST /api/v1/merchant/profile` 只做资料维护；`POST /api/v1/merchant/verification` 作为唯一实名提交入口，并使用 FormRequest 做必填、格式、附件完整性和可编辑状态校验。
+- 请求字段草案：`ownerName`、`idNumber`、`businessLicenseUrl`、`documentFrontUrl`、`documentBackUrl`、`selfieUrl`。
+- 响应字段草案：`status`、`applicationNo`、`submittedAt`、`editable`、`reviewNote`。
+- 失败场景：资料不完整、pending 审核中重复提交、approved 后无权限覆盖、rejected 后补交必须保留历史审核记录。
+- 影响页面：商家资料页、实名页、Dcat 审核后台、商家接单准入。
+- 状态：implemented
+- 关联合同：`api/merchant-api.md`、`docs/boundaries.md`
+- 关联代码：`MerchantProfileService::updateProfile`、`MerchantVerificationService::submitVerification`、`SubmitMerchantVerificationRequest`、`MerchantPortalController@submitVerification`、`epmerchant/src/app/[locale]/merchant/profile/verification/page.tsx`
+
+---
+
+## R-20260428-036 商家履约状态机失败、退回与目标态补齐
+
+- 来源角色：商家端 / Backend API / 状态机审计
+- 背景：商家端当前可通过后端推进 `merchant_confirmed`、`in_service`、`merchant_completed`、`cancelled`，并由 `OrderWorkflowService` 校验转移。当前已新增商家异常动作入口，支持迟到、未履约、改约、争议和售后退回履约中；`after_sales` 已进入 transition map，并由后端写履约事件和信用事件。
+- 需要的接口：新增 `POST /api/v1/merchant/orders/{orderNo}/failure-action`，由商家触发 `report_late`、`report_no_show`、`request_reschedule`、`dispute_opened`、`return_to_in_service`。
+- 请求字段草案：`action`、`reasonCode`、`reasonText`、`evidence[]`、`proposedServiceTime`。
+- 响应字段草案：目标 `workflowStatus`、`legacyWorkflowStatus`、`allowedNextActions[]`、`failureEvent`、`creditImpact`、`customerVisibleMessage`。
+- 失败场景：非法状态转移、重复动作、商家无订单所有权、未付款开始服务、争议中继续结算、失败事件未写信用。
+- 影响页面：商家订单、客户订单、履约事件、信用分、结算。
+- 状态：implemented
+- 关联合同：`docs/state-machine.md`、`api/merchant-api.md`、`api/user-api.md`
+- 关联代码：`OrderWorkflowService`、`MerchantOrderFailureActionService`、`MerchantPortalController@failureAction`、`MerchantOrderFailureActionRequest`、`FulfillmentEventService`
+
+---
+
+## R-20260428-037 商家端后端错误响应标准化
+
+- 来源角色：商家端 / Backend API / 开发标准审计
+- 背景：后端已有 `ApiResponse` 结构，但商家域仍大量由 Service 抛出英文 `HttpException`，Controller 多处直接使用 `$request->all()`，缺少 FormRequest 和稳定业务错误码。当前已补商家订单动作、异常动作、可用性、语言偏好的 FormRequest；新增 `ApiProblem`，商家域异常不再返回 debug 文件行号，结构化返回 `code/errors/nextAction`。
+- 需要的接口：商家域 API 统一返回 `code`、`message`、`errors[]`、`requestId`、`timestamp`，并补充业务错误码表；Controller 使用 FormRequest，Service 抛领域异常或返回标准错误对象。
+- 请求字段草案：无新增业务字段。
+- 响应字段草案：错误响应稳定包含数字 `code`、可翻译 `message`、字段级 `errors[]`，可选 `nextAction`。
+- 失败场景：前端收到 raw English、无法定位字段错误、debug 泄露内部路径、不同接口错误结构不一致。
+- 影响页面：商家登录、资料、实名、能力、订单、钱包、评价。
+- 状态：implemented
+- 关联合同：`api/merchant-api.md`、`PROJECT_RULES.md` 第 2 节
+- 关联代码：`ApiProblem`、`bootstrap/app.php`、`MerchantPortalController`、`MerchantOrderActionRequest`、`MerchantOrderFailureActionRequest`、`UpdateMerchantAvailabilityRequest`、`UpdateMerchantLocaleRequest`
+
+---
+
 ## 维护
 
 - 新需求：**追加**新 `R-` 号（**`R-20260428-020` 起**）。  
@@ -476,4 +654,15 @@
 | 023    | 平台代管、平台 1% 收益与结算 | **implemented** |
 | 024    | 履约事件、异常惩罚与信用更新 | **implemented** |
 | 025    | 双向互评与广场脱敏分发       | **implemented** |
-| 026    | 订单服务身份与展示名标准化   | **proposed** |
+| 026    | 订单服务身份与展示名标准化   | **implemented** |
+| 027    | PostgreSQL 能力读模型同步    | **rejected**（暂停） |
+| 028    | 能力库 6 小时自动同步调度    | **rejected**（暂停） |
+| 029    | AI 语义搜索能力库            | **rejected**（暂停） |
+| 030    | 当前用户端无支撑 BFF 清理或补合同 | **proposed** |
+| 031    | 商家偏好语言 BFF 上游路径修正 | **implemented** |
+| 032    | 商家订单响应与 P2/P3 摘要对齐 | **implemented** |
+| 033    | 商家能力 StandardService 选择来源 | **implemented** |
+| 034    | 商家资料字段与位置采集补齐 | **implemented** |
+| 035    | 商家实名提交流程与资料维护解耦 | **implemented** |
+| 036    | 商家履约失败、退回与目标态补齐 | **implemented** |
+| 037    | 商家端后端错误响应标准化 | **implemented** |

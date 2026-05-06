@@ -1,6 +1,6 @@
 # 商家端 API 合同（Merchant API Contract）
 
-最后更新：2026-05-05（P2/P3 可用性、履约与信用合同补充）
+最后更新：2026-05-07（商家资料位置字段与实名提交流程解耦）
 
 ## 概述
 
@@ -59,10 +59,20 @@
 | GET | `/api/v1/merchant/auth/me` | 当前商家会话/摘要 |
 | POST | `/api/v1/merchant/auth/logout` | 登出 |
 | GET | `/api/v1/merchant/profile` | 商家资料 |
-| POST | `/api/v1/merchant/profile` | 更新资料（如 `merchantName`、`contactPhone`、`serviceIntro`、`online`、`serviceTypes` 等，以后端实现为准） |
-| POST | `/api/v1/merchant/verification` | 提交/更新认证材料 |
+| POST | `/api/v1/merchant/profile` | 更新基础资料和位置；不提交实名审核 |
+| POST | `/api/v1/merchant/verification` | 提交实名认证材料；与资料保存解耦 |
 
-**响应（资料）关键字段（示例级）**：`id`、`merchantName`、`status` / `merchantStatus`、`serviceTypes`、`boundServiceCategories[]`、`verification` 等，与现网联调类型对齐，**不另造字段名**。
+**响应（资料）关键字段（合同级）**：
+
+- `merchantName`、`contactPhone`、`serviceIntro`、`online`
+- `serviceTypes[]`、`boundServiceCategories[]`
+- `location`：`baseAddress`、`placeId`、`lat`、`lng`、`serviceRadiusMeters`、`areas[]`、`locationVerified`、`updatedAt`
+- `merchantStatus`
+- `verification`：最近一次实名审核摘要，仅展示审核状态和材料 URL；不由 profile 保存触发更新。
+
+**`POST /profile` 请求字段**：可传 `merchantName`、`contactPhone`、`serviceIntro`、`online`、`serviceTypes[]`、`location`。`location.lat/lng` 必须是合法经纬度；`serviceRadiusMeters` 不得小于 500。
+
+**`POST /verification` 请求字段**：`ownerName`、`idNumber`、`businessLicenseUrl`、`documentFrontUrl`、`documentBackUrl`、`selfieUrl` 必填。`pending` 审核中不可重复提交，`approved` 后不可覆盖；`rejected` 后重新提交会生成新的 pending 记录，保留历史审核记录。
 
 ---
 
@@ -158,10 +168,13 @@
 | POST | `/api/v1/merchant/orders/{orderNo}/start-service` | 开始服务 |
 | POST | `/api/v1/merchant/orders/{orderNo}/finish-service` | 完成服务 |
 | POST | `/api/v1/merchant/orders/{orderNo}/cancel` | 取消订单 |
+| POST | `/api/v1/merchant/orders/{orderNo}/failure-action` | 迟到、未履约、改约、争议、售后退回等异常动作 |
 
 **列表项核心字段（与现网联调对齐，示例级）**：`orderNo`、客户展示字段、金额与支付相关（如 `paymentStatus`、`customerPaid`、`canMerchantStartService`）、`workflowStatus`、服务地址、预约/确认时间、**`status`** 等。**订单业务状态机** 以 `docs/state-machine.md` 与后端实现为准，商家端 **不得** 自行定义独立状态名。
 
-P2/P3 列表和详情应逐步包含：`fulfillmentEvents` 摘要、`settlement` 摘要、`creditImpact` 摘要、异常/惩罚提示。具体字段以 R-024/R-025 和 registry 已实现项为准。
+P2/P3 列表和动作响应已包含：目标 `workflowStatus`、可选 `legacyWorkflowStatus`、`fulfillmentEvents` 摘要、`settlement` 摘要、`creditImpact` 摘要、`canReviewCustomer` / `merchantReview`。异常动作入口支持 `report_late`、`report_no_show`、`request_reschedule`、`dispute_opened`、`return_to_in_service`。
+
+**商家域错误响应**：结构固定为 `code`、`message`、`errors[]`、`requestId`、`timestamp`，可选 `nextAction`。商家域不返回 debug 文件路径和行号；字段校验由 FormRequest 返回 `errors[]`。
 
 **兼容（过渡）**：历史上可能存在 `POST /api/v1/merchant/orders/{orderNo}/confirm`、`POST .../transition` 等路径，用于旧流中确认时间或状态迁移；**新主流程** 的终局报价与时间以第 5 组 **MerchantQuoteConfirmation** 为准，履约段以本节动作为准。具体是否仍注册见 `api/registry.md`。
 

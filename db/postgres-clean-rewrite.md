@@ -1,19 +1,42 @@
 # PostgreSQL / MySQL Split Plan
 
-Last updated: 2026-05-06
+Last updated: 2026-05-07
 
-Status: revised direction for the independent development/design phase.
+Status: paused. Current phase stays MySQL-only for business facts and migrations.
 
 Scope: database direction only; concrete migrations live in `epbkend/expatth-backend/database/migrations`.
+
+## Current Phase
+
+The current phase is MySQL-only for business facts. Do not implement the PostgreSQL task tree during current frontend-flow validation.
+
+Current phase work:
+
+- Verify MySQL tables and Laravel routes support the active customer and merchant frontends.
+- Resolve BFF/API gaps before adding new database capability work.
+- Keep Dcat Plus and all transaction facts on MySQL.
+- Do not keep PostgreSQL-only migrations in the active MySQL migration path.
+
+## Next Phase: `pgsql plan`
+
+The following task tree is paused and must be re-approved before implementation:
+
+- Add PostgreSQL capability tables for merchant geo profiles, recommendation features, search embeddings, and sync runs.
+- Add sync jobs from MySQL facts to PostgreSQL read models.
+- Schedule sync every 6 hours.
+- Add Dcat manual sync action.
+- Add AI semantic search embeddings with pgvector.
+- Add PostGIS distance and service-area query support.
+- Add pg_trgm multilingual fuzzy search support.
 
 ## Decision
 
 ExpatTH backend currently has two database responsibilities:
 
-- **Current admin and Laravel default connection**: keep MySQL while the Dcat Plus admin system remains in use.
-- **Future AI/geo/search capability**: use PostgreSQL with PostGIS, pgvector, and pg_trgm when those capabilities are introduced as a deliberate connection or migration slice.
+- **Current business source of truth**: keep MySQL for users, merchants, orders, payments, wallets, reviews, Dcat Plus, and operational back office data.
+- **Future AI/geo/search capability read models**: use PostgreSQL on Alibaba Cloud RDS first when distance search, recommendation ranking, semantic search, and multilingual fuzzy search need dedicated computation tables.
 
-The backend must not switch the default `DB_CONNECTION` from MySQL to PostgreSQL unless there is an explicit Dcat admin replacement or migration plan.
+The backend must not switch the default `DB_CONNECTION` from MySQL to PostgreSQL unless there is an explicit Dcat admin replacement or full transaction database migration plan. The next PostgreSQL step is not a transaction-source migration; it is a computed read-model slice fed from MySQL.
 
 The PostgreSQL target capability set is:
 
@@ -33,7 +56,7 @@ The product needs:
 - smart recommendation and push candidates
 - clean state and contract consistency across user, merchant, and backend apps
 
-PostgreSQL is still the better fit for distance search, AI semantic search, and future recommendation data. However, the current backend already has a Dcat Plus admin system and MySQL schema snapshot for admin tables. Replacing the default connection would risk breaking admin users, roles, menus, settings, extensions, and existing operational data.
+PostgreSQL is still the better fit for distance search, AI semantic search, and future recommendation data. However, the current backend already has a Dcat Plus admin system and MySQL schema snapshot for admin and transaction tables. Replacing the default connection now would add transaction and back-office risk before the product flow is stable.
 
 Redis remains useful for queue, cache, rate limiting, and push throttling, but not as the source of truth.
 
@@ -67,6 +90,43 @@ Evidence in the backend:
 - Dcat admin tables are present in the MySQL schema snapshot: `admin_users`, `admin_roles`, `admin_permissions`, `admin_menu`, `admin_settings`, `admin_extensions`, and related pivot/history tables.
 
 Implication: Dcat admin is a current MySQL-bound subsystem, not a disposable legacy table group.
+
+## Capability Read Model Workflow
+
+Decision date: 2026-05-06.
+
+Confirmed direction:
+
+- Keep `DB_CONNECTION=mysql` for Laravel default and Dcat's own admin tables.
+- Keep `ADMIN_DB_CONNECTION=mysql` for explicit Dcat table ownership.
+- Keep transaction writes in MySQL until a separate full migration is intentionally planned.
+- Use PostgreSQL read models only for distance search, recommendation ranking, AI semantic search, and multilingual fuzzy search.
+- Prefer Alibaba Cloud RDS for PostgreSQL when this capability database is introduced.
+- Sync MySQL facts into PostgreSQL every 6 hours by default.
+- Provide a Dcat manual sync action for operators to trigger the same sync job on demand.
+
+The backend currently has a read-only admin bridge:
+
+- Use `TRADE_READ_CONNECTION` for Dcat trade center pages and future capability/read-model screens.
+- Supported connection templates are `mysql_trade` and `pgsql_trade`.
+- Dcat trade order, payment, and order-state-log pages use backend AdminRead models and must remain read-only.
+
+This lets operators view or trigger read-model workflows without moving Dcat's users, roles, menus, settings, or extension tables away from MySQL.
+
+## Sync Sources
+
+PostgreSQL read models should be derived from MySQL facts:
+
+- merchant location and service-area data
+- merchant capabilities and ready status
+- standard service and requirement template text
+- order requirement payload summaries
+- quote preview and merchant quote confirmation summaries
+- rating, completion, late/no-show, and response-speed metrics
+- user behavior and interest events when product tracking is introduced
+- public review, merchant profile, and service text used for embeddings
+
+Core money, order state, wallet balance, and settlement facts remain in MySQL until a separate transaction-source migration is approved.
 
 ## New Table Direction
 

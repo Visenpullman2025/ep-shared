@@ -1,16 +1,24 @@
 # 目标表（P2/P3 计划）
 
-最后更新：2026-05-06
+最后更新：2026-05-07
 
 状态：accepted
 
 职责边界：本文只写数据库模型方向和表职责；接口合同写入 `../api/*.md`，待实现需求写入 `../api/requests.md`，真实迁移以 `epbkend/expatth-backend/database/migrations` 为准。现网以 `expatth-backend/database/schema/mysql-schema.sql` 为参照。
 
-数据库边界（2026-05-06）：当前 Laravel 默认连接和 Dcat Plus 后台保持 MySQL。PostgreSQL/PostGIS/pgvector/pg_trgm 是 AI、距离搜索和推荐能力的目标方向，但不得直接替换当前 `DB_CONNECTION=mysql`，除非先完成后台替换或 Dcat 数据迁移方案。
+当前阶段（2026-05-07）：先审计并修复 MySQL、Laravel API、用户端 BFF、商家端 BFF 是否支撑当前前端流程；不执行 PostgreSQL 能力库实现。已删除阻塞 MySQL migration 的 PostgreSQL extension migration，避免影响当前开发进度。
+
+数据库边界（2026-05-07）：当前 Laravel 默认连接和 Dcat Plus 后台保持 MySQL。PostgreSQL/PostGIS/pgvector/pg_trgm 暂停进入开发执行；后续如重新启用，必须重新登记独立计划，不能再影响当前 MySQL migration。
+
+交易后台读取边界（2026-05-06）：Dcat 自身表继续使用 MySQL/default connection；Dcat 的交易中心页面通过 `TRADE_READ_CONNECTION` 只读接入交易/能力读模型。当前后端已提供 `mysql_trade` 与 `pgsql_trade` 两个连接模板，后台交易订单、支付、订单状态日志使用 AdminRead 模型读取该连接。后台交易页不得直接写订单状态、支付状态或履约状态，状态推进仍由 Laravel API / Service / Action 控制。
+
+能力库同步边界（2026-05-07）：PostgreSQL 能力库、AI 语义搜索同步、6 小时同步和 Dcat 手动同步按钮全部暂停，不进入当前阶段实现。
 
 当前实现粒度（2026-05-05）：P2/P3 已落地的是最小可联调切片，主要通过 `yipai_orders` 冻结/平台费/结算字段、`yipai_reviews` 广场发布字段、`yipai_fulfillment_events` 履约事件表和既有商户信用事件链路承载。第 10 节独立表是目标模型方向，未迁移前不得在 registry 或验收里宣称这些目标表已全部存在。
 
 当前后台存储边界（2026-05-06）：Dcat Plus 使用 `admin.database.connection`，未单独配置时回落到 Laravel default connection。当前 default connection 为 MySQL，因此 `admin_users`、`admin_roles`、`admin_permissions`、`admin_menu`、`admin_settings`、`admin_extensions` 等后台表属于 MySQL 当前承载范围。
+
+当前前端流程支撑结论（2026-05-07）：MySQL RDS 已执行商家位置字段迁移，`yipai_merchants` 已包含 `base_address`、`place_id`、`lat`、`lng` 和服务半径字段。现有表结构可以支撑当前核心前端流程：标准服务浏览、RequirementTemplate、QuotePreview、用户注册登录、资料、地址、订单、商家候选、商家报价确认、平台代管支付、履约事件、售后、互评、广场、钱包和 Dcat 后台只读查看。
 
 ## 1. `standard_services`（StandardService）
 
@@ -77,6 +85,10 @@
 | `settlement_records` | 商家结算记录；关联订单、商家、结算金额、平台收益、状态与时间。 |
 | `customer_credit_events` | 用户侧信用事件；用于恶意取消、争议判责、正常完成等长期评分。 |
 | `square_distribution_jobs` | 评价同步广场的脱敏发布任务；记录来源评价、发布状态、匿名策略和失败原因。 |
+| `merchant_geo_profiles` | PostgreSQL 能力读模型；从 MySQL 商家地址、能力、服务范围抽取，生成 PostGIS 查询对象。 |
+| `merchant_recommendation_features` | PostgreSQL 能力读模型；从 MySQL 订单、评价、履约、响应速度抽取，生成推荐排序特征。 |
+| `search_embeddings` | PostgreSQL 能力读模型；使用 pgvector 保存标准服务、商家介绍、公开评价和帮助内容的 embedding。 |
+| `capability_sync_runs` | PostgreSQL 或 MySQL 运维记录；记录 6 小时自动同步和 Dcat 手动同步的状态、范围、耗时、错误摘要。 |
 
 ## 11. 策略字段方向
 
