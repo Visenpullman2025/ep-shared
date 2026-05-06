@@ -2,7 +2,7 @@
 
 最后更新：2026-05-07
 
-状态：current-phase audit。本文只记录用户端当前 API/BFF 是否能支撑现有下单、资料、地址、订单和广场流程。
+状态：current-phase audit。本文记录用户端当前 API/BFF、构建验证和结构门禁是否支撑现有下单、资料、地址、订单和广场流程。
 
 职责边界：`ep` 用户端页面、BFF、客户侧 API 消费。客户界面不得展示内部 code、内部状态、结算字段或原始后端错误。
 
@@ -20,10 +20,13 @@
 | `ep-shared/api/registry.md` | 更新 | 登记 `merchants/featured`、`me/location`、`me/verification`。 |
 | `ep-shared/PROJECT_RULES.md` | 更新 | 越界审计登记 BFF/API 缺口。 |
 | `ep-shared/reports/user-frontend.md` | 更新 | 本报告。 |
+| `ep/package.json` | 更新 | `npm run build` 固定走 `next build --webpack`，避开本机 Turbopack compile 卡住。 |
+| `ep/src/components/OrderCenterCard.tsx`、`ep/src/components/order-center-card/*` | 拆分 | 订单卡主组件由 573 行降到 108 行。 |
+| `ep/src/components/review/OrderReviewPageClient.tsx`、`ep/src/components/review/order-review-page/*` | 拆分 | 评价页主组件由 835 行降到 159 行，拆出表单、预览、只读卡片、反馈弹窗和 hook。 |
 
 ## 3. 明确未修改范围
 
-- 未修改 `ep` 页面或 BFF 代码。
+- 未修改用户端 API 合同或 BFF 上游路径。
 - 未把无支撑 BFF 改成 mock 或静态兜底。
 - 已新增 R-030 对应 registry implemented；未新增前端 mock 或静态兜底。
 
@@ -70,6 +73,8 @@ R-030 已补齐可联调：
 | 用户端 BFF 路径 | 主链 BFF 已覆盖 standard-services、orders、auth、me/profile、me/addresses、wallet、square、oss。 |
 | Laravel route list | 主链上游存在；R-030 三组路径已补路由。 |
 | 产品规则 | 客户侧必须继续隐藏内部 code/status/结算字段，金额和状态只读后端 presenter。 |
+| 构建验证 | `npm run build` 已通过，当前脚本使用 webpack；默认 Turbopack 在本机曾卡在 compile 并留下 `.next/lock`。 |
+| 结构门禁 | `OrderCenterCard.tsx` 108 行；`OrderReviewPageClient.tsx` 159 行；新拆分组件和 hook 均低于目标上限。 |
 
 ## 9. 阻塞点
 
@@ -80,4 +85,4 @@ R-030 已补齐可联调：
 
 ## 10. 下一步建议
 
-用户端可以继续人工测试主下单、资料、地址、订单和首页推荐商家流程。后续新增入口仍必须先走 shared requests/registry，不得绕过 API 固定闸门。
+用户端可以继续人工测试主下单、资料、地址、订单、评价和首页推荐商家流程。后续新增入口仍必须先走 shared requests/registry，不得绕过 API 固定闸门；后续构建验证使用 `npm run build`，不要直接跑默认 Turbopack 构建。
