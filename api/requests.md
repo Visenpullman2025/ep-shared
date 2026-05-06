@@ -498,21 +498,23 @@
 
 - 来源角色：用户端 / Backend API / 审计
 - 背景：当前阶段审计发现用户端存在 BFF 调用后端未注册路径。按 API 固定闸门，这些入口不能被视为已完成；2026-05-07 已选择补后端实现。
-- 需要的接口：`GET /api/v1/merchants/featured`、`GET/POST /api/v1/me/verification`、`GET/POST /api/v1/me/location`。
+- 需要的接口：`GET /api/v1/merchants/featured`、`GET /api/v1/location/resolve`、`GET/POST /api/v1/me/verification`、`GET/POST /api/v1/me/location`。
 - 请求字段：
   - `GET /merchants/featured`：query 可选 `limit`、`lat`、`lng`、`locale`。
+  - `GET /location/resolve`：query 必填 `lat`、`lng`，可选 `locale`；用于把浏览器定位坐标解析成用户可读位置。
   - `GET /me/verification`、`GET /me/location`：无业务入参，用户 JWT。
   - `POST /me/verification`：`realName`、`idNumber`、`documentFrontUrl`，可选 `documentBackUrl`、`selfieUrl`。
   - `POST /me/location`：`address`，可选 `lat`、`lng`、`placeId`、`label`、`contactPhone`、`doorplateImageUrl`、`isDefault`。
 - 响应字段：
   - featured merchants：`id`、`name`、`intro`、`rating`、`orderCount`、`onlineStatus`、`areas`、`serviceTypes`、`distanceKm`、`responseMinutes`、`imageUrl`、`featuredServiceTitle`。
+  - location resolve：`label`、`city`、`district`、`lat`、`lng`、`source`。
   - user verification：`applicationNo`、`status`、`realName`、`idNumber`、证件 URL、`reviewNote`、`submittedAt`、`reviewedAt`、`editable`。
   - user location：`location` 和 `address`，含 `id`、`label`、`contactPhone`、`address`、`lat`、`lng`、`placeId`、`doorplateImageUrl`、`isDefault`、`updatedAt`。
 - 失败场景：401 用户未登录；422 入参不完整或已有实名审核中；推荐商家无可展示数据时返回空数组，不使用 mock。
-- 影响页面：首页推荐商家；用户端资料/位置相关潜在入口。
+- 影响页面：首页定位、首页推荐商家；用户端资料/位置相关潜在入口。
 - 状态：implemented
 - 关联合同：`PROJECT_RULES.md` 第 4 节 API 固定闸门；`reports/database-clean-rewrite-audit.md`
-- 关联代码：`ep/src/app/api/merchants/featured/route.ts`、`ep/src/app/api/me/verification/route.ts`、`ep/src/app/api/me/location/route.ts`、`epbkend/expatth-backend/routes/api.php`、`MerchantDiscoveryController`、`UserVerificationController`、`UserLocationController`
+- 关联代码：`ep/src/app/api/merchants/featured/route.ts`、`ep/src/app/api/location/resolve/route.ts`、`ep/src/app/api/me/verification/route.ts`、`ep/src/app/api/me/location/route.ts`、`epbkend/expatth-backend/routes/api.php`、`MerchantDiscoveryController`、`LocationResolveController`、`UserVerificationController`、`UserLocationController`
 
 ---
 
@@ -658,7 +660,7 @@
 | 027    | PostgreSQL 能力读模型同步    | **rejected**（暂停） |
 | 028    | 能力库 6 小时自动同步调度    | **rejected**（暂停） |
 | 029    | AI 语义搜索能力库            | **rejected**（暂停） |
-| 030    | 当前用户端无支撑 BFF 清理或补合同 | **proposed** |
+| 030    | 当前用户端无支撑 BFF 清理或补合同 | **implemented** |
 | 031    | 商家偏好语言 BFF 上游路径修正 | **implemented** |
 | 032    | 商家订单响应与 P2/P3 摘要对齐 | **implemented** |
 | 033    | 商家能力 StandardService 选择来源 | **implemented** |

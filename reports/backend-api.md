@@ -27,7 +27,7 @@
 - 未实现 PostgreSQL 能力库、同步任务、AI embedding、距离搜索或推荐读模型。
 - 未把 `DB_CONNECTION` 改为 PostgreSQL。
 - 未把 R-027、R-028、R-029 写入 registry implemented。
-- 已补实现 R-030：`GET /api/v1/merchants/featured`、`GET/POST /api/v1/me/verification`、`GET/POST /api/v1/me/location`。
+- 已补实现 R-030：`GET /api/v1/merchants/featured`、`GET /api/v1/location/resolve`、`GET/POST /api/v1/me/verification`、`GET/POST /api/v1/me/location`。
 
 ## 4. api/requests.md 变更
 

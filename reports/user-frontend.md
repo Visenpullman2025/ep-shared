@@ -31,7 +31,7 @@
 
 | R 编号 | 标题 | 操作 | 状态 |
 |---|---|---|---|
-| R-20260428-030 | 当前用户端无支撑 BFF 清理或补合同 | 后端补实现并登记 `merchants/featured`、`me/verification`、`me/location` | implemented |
+| R-20260428-030 | 当前用户端无支撑 BFF 清理或补合同 | 后端补实现并登记 `merchants/featured`、`location/resolve`、`me/verification`、`me/location` | implemented |
 
 ## 5. 编号校验
 

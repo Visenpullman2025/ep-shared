@@ -417,6 +417,16 @@
 - 实现位置：`MerchantDiscoveryController@featured`、`MerchantDiscoveryService`
 - 前端使用位置：首页推荐商家 BFF `ep/src/app/api/merchants/featured/route.ts`
 
+## GET /api/v1/location/resolve
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：公开接口，可带可选用户 token
+- 请求：query 必填 `lat`、`lng`，可选 `locale`
+- 响应：`label`、`city`、`district`、`lat`、`lng`、`source`
+- 实现位置：`LocationResolveController@show`、`LocationResolveService`
+- 前端使用位置：首页定位 BFF `ep/src/app/api/location/resolve/route.ts`
+
 ## GET/POST /api/v1/me/location
 
 - 状态：implemented
