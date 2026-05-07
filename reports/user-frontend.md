@@ -23,6 +23,8 @@
 | `ep/package.json` | 更新 | `npm run build` 固定走 `next build --webpack`，避开本机 Turbopack compile 卡住。 |
 | `ep/src/components/OrderCenterCard.tsx`、`ep/src/components/order-center-card/*` | 拆分 | 订单卡主组件由 573 行降到 108 行。 |
 | `ep/src/components/review/OrderReviewPageClient.tsx`、`ep/src/components/review/order-review-page/*` | 拆分 | 评价页主组件由 835 行降到 159 行，拆出表单、预览、只读卡片、反馈弹窗和 hook。 |
+| `ep/src/lib/orders-workflow.ts`、`ep/src/lib/orders-permissions.ts`、`ep/src/components/order-center-card/*` | 更新 | 用户端订单卡支付判断和 badge 与 `waiting_payment_or_authorization`、`paid_or_authorized` 等目标状态对齐；未知状态不再把原始后端字面量展示给客户。 |
+| `ep/src/app/[locale]/standard-services/[code]/quote/page.tsx`、`ep/src/components/standard-services/StandardServiceQuotePageClient.tsx`、`ep/src/app/[locale]/orders/new/page.tsx`、`ep/src/middleware.ts`、`ep/src/lib/auth/paths.ts` | 清理 | 删除旧独立 quote 客户端页，旧 `/standard-services/{code}/quote` 统一重定向到标准服务详情页内联报价；未登录创建订单仍走统一登录/注册门禁并保留 next。 |
 
 ## 3. 明确未修改范围
 
@@ -75,6 +77,8 @@ R-030 已补齐可联调：
 | 产品规则 | 客户侧必须继续隐藏内部 code/status/结算字段，金额和状态只读后端 presenter。 |
 | 构建验证 | `npm run build` 已通过，当前脚本使用 webpack；默认 Turbopack 在本机曾卡在 compile 并留下 `.next/lock`。 |
 | 结构门禁 | `OrderCenterCard.tsx` 108 行；`OrderReviewPageClient.tsx` 159 行；新拆分组件和 hook 均低于目标上限。 |
+| 订单状态机 UI | 支付入口覆盖目标态 `waiting_payment_or_authorization`；已支付/已预授权覆盖 `paid_or_authorized`、`paymentStatus=paid/authorized/settled`；客户侧未知状态统一显示“处理中”。 |
+| 下单动线 | 服务详情页是唯一客户报价入口；旧 `/quote` URL 只做重定向，不再保留第二套表单、raw JSON 或内部字段说明。 |
 
 ## 9. 阻塞点
 
@@ -85,4 +89,4 @@ R-030 已补齐可联调：
 
 ## 10. 下一步建议
 
-用户端可以继续人工测试主下单、资料、地址、订单、评价和首页推荐商家流程。后续新增入口仍必须先走 shared requests/registry，不得绕过 API 固定闸门；后续构建验证使用 `npm run build`，不要直接跑默认 Turbopack 构建。
+用户端可以继续人工测试主下单、资料、地址、订单、评价和首页推荐商家流程。下单测试以标准服务详情页内联报价为准；如访问旧 `/standard-services/{code}/quote`，应自动回到详情页。后续新增入口仍必须先走 shared requests/registry，不得绕过 API 固定闸门；后续构建验证使用 `npm run build`，不要直接跑默认 Turbopack 构建。
