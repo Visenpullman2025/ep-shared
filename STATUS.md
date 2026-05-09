@@ -108,16 +108,16 @@
 
 这些是代码里实际存在的问题，不是文档问题：
 
-| 问题 | 位置 | 严重度 | 建议 |
+| 问题 | 位置 | 严重度 | 状态 |
 |------|------|--------|------|
-| MerchantPortalController 320 行 33 方法 | 后端 | 🔴 高 | 拆分为多个控制器 |
-| 前端硬编码订单状态判断 | ep/orders-permissions.ts | ✅ 已修 | 改为后端下发 nextAction |
-| 前端硬编码取消罚款 20% | epmerchant | 🟡 中 | 后续改为后端下发，当前保留 |
-| services/ 与 capabilities/ 并存 | epmerchant | 🟡 中 | 过渡期保留，边界待定 |
-| 多个页面超行数限制 | ep + epmerchant | 🟡 中 | 逐步拆分 |
-| API 响应格式不统一（list/items/直接数组） | ep | 🟡 中 | 后端统一响应格式 |
-| locale 默认值 'zh' 硬编码 8+ 处 | 后端 | 🟢 低 | 提取为 config |
-| 废弃 quote/ 目录仍存在 | ep | 🟢 低 | 进行中（git rm 待提交） |
+| MerchantPortalController 320 行 33 方法 | 后端 | 🔴 高 | ✅ 已拆分为 4 个 Controller |
+| 前端硬编码订单状态判断 | ep/orders-permissions.ts | 🔴 高 | ✅ 改为后端下发 nextAction |
+| API 响应格式不统一 | ep/epmerchant | 🟡 中 | ✅ 统一为 {list, listCount} |
+| locale 默认值 'zh' 硬编码 | 后端 12 处 Controller | 🟢 低 | ✅ 已清除（middleware 统一处理） |
+| 废弃 quote/ 目录仍存在 | ep | 🟢 低 | ⏳ paths.ts 已清理，git rm 待执行 |
+| 前端硬编码取消罚款 20% | epmerchant | 🟡 中 | 🔵 accepted-temporary（等支付网关） |
+| services/ 与 capabilities/ 并存 | epmerchant | 🟡 中 | 🔵 过渡期保留，v1.8 前确定边界 |
+| 多个页面超行数限制 | ep profile 380行; epmerchant services 435行 | 🟡 中 | 🔵 列入 v1.1 遗留，按需拆分 |
 
 ---
 
@@ -126,10 +126,14 @@
 ### v1.0 — 主交易链路跑通 ✅ 完成
 用户下单 → 商家 MQC → 用户确认 → 订单进入待支付。链路有真实后端支撑，前后端已联调。
 
-### v1.1 — 代码质量 & 边界修复 🔄 进行中（当前）
-- MerchantPortalController 拆分 ✅
+### v1.1 — 代码质量 & 边界修复 ✅ 基本完成
+- MerchantPortalController 拆分为 4 个 Controller ✅
 - 前端状态判断改为后端下发 nextAction ✅
-- 废弃 quote/ 目录清理
+- API 响应格式统一为 {list, listCount} ✅
+- locale 硬编码清除（middleware 统一处理）✅
+- dashboard 版本路线 + API Ref 模块 ✅
+- 废弃 quote/ 目录清理（paths.ts 已清理，git rm 待执行）⏳
+- 页面超行数、services/capabilities 边界 → 列入 v1.2
 - services/ 与 capabilities/ 边界确认
 - API 响应格式统一
 - 页面超行数逐步拆分
