@@ -1,0 +1,101 @@
+[
+  {
+    "id": 5,
+    "method": "POST",
+    "path": "/api/merchant/preferences/locale",
+    "status": "compatibility",
+    "req_id": "",
+    "contract": "",
+    "auth": "merchant",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  },
+  {
+    "id": 7,
+    "method": "GET",
+    "path": "/api/merchant/standard-services",
+    "status": "compatibility",
+    "req_id": "",
+    "contract": "",
+    "auth": "merchant",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  },
+  {
+    "id": 4,
+    "method": "POST",
+    "path": "/api/orders",
+    "status": "implemented",
+    "req_id": "",
+    "contract": "",
+    "auth": "user",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  },
+  {
+    "id": 6,
+    "method": "POST",
+    "path": "/api/v1/merchant/preferences/locale",
+    "status": "compatibility",
+    "req_id": "",
+    "contract": "",
+    "auth": "merchant",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  },
+  {
+    "id": 9,
+    "method": "GET",
+    "path": "/api/v1/merchant/services/{serviceId}",
+    "status": "compatibility",
+    "req_id": "",
+    "contract": "",
+    "auth": "merchant",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  },
+  {
+    "id": 3,
+    "method": "POST",
+    "path": "/api/v1/orders",
+    "status": "compatibility",
+    "req_id": "",
+    "contract": "",
+    "auth": "user",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  },
+  {
+    "id": 2,
+    "method": "POST",
+    "path": "/api/v1/orders/{orderNo}/after-sales",
+    "status": "planned",
+    "req_id": "",
+    "contract": "",
+    "auth": "user",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  },
+  {
+    "id": 1,
+    "method": "POST",
+    "path": "/api/v1/orders/{orderNo}/confirm-merchant-quote",
+    "status": "planned",
+    "req_id": "",
+    "contract": "",
+    "auth": "merchant",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  },
+  {
+    "id": 8,
+    "method": "GET",
+    "path": "/api/v1/standard-services",
+    "status": "compatibility",
+    "req_id": "",
+    "contract": "",
+    "auth": "public",
+    "notes": "",
+    "updated_at": "2026-05-09 18:44:09"
+  }
+]
