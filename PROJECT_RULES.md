@@ -1,6 +1,6 @@
 # ExpatTH 项目规则总纲
 
-最后更新：2026-05-05  
+最后更新：2026-05-08  
 状态：当前唯一规则源。其他 `AGENTS.md`、`.cursorrules`、`.cursor/rules/*.mdc` 只做入口，不重复写规则。
 
 ## 1. 核心最高准则
@@ -25,6 +25,7 @@
 - TypeScript/React/Next：遵守项目 ESLint、TypeScript、Next 约定；组件 PascalCase，函数和变量 camelCase，路径按现有目录风格。
 - API：面向资源时采用 RESTful 命名；平台业务词、状态和字段优先以 shared 合同为准。
 - 数据库：表、字段、索引先表达业务事实和查询路径；不为临时 UI 随手建表。
+- Laravel 列表/分页接口必须返回瘦 DTO，禁止在逐行 `map` / `foreach` 中调用会查库的详情聚合器或 Service；详情聚合必须先 `whereIn` / eager load 批量预取。新增或改造列表接口要用 `DB::listen`、Telescope 或等价方式抽查 `queryCount`，页大小增加时 SQL 次数不得随行数线性增长。
 - Dcat Plus 后台在当前项目中保持 MySQL/default connection 边界；未完成后台替换或迁移方案前，不得把后端默认连接直接切到 PostgreSQL。
 - 现有项目风格优先于外部通用规范；冲突时先说明取舍，不悄悄混用。
 - 用户举例不自动成为硬规则。例如“统一驼峰”代表要有命名标准，不代表所有层都必须 camelCase；是否升级必须按第 6 节标准化。
@@ -242,37 +243,21 @@ BFF 边界：
 
 发现越界时必须追加一行。状态只能是 `open`、`fixed`、`accepted-temporary`。`accepted-temporary` 必须写删除条件。
 
-| 日期 | 来源 | 影响位置 | 越界行为 | 风险 | 修正动作 | 状态 |
-| ---- | ---- | -------- | -------- | ---- | -------- | ---- |
-| 2026-05-04 | 前端 API 链路检查 | `ep/src/app/api/me/favorites/route.ts`、`ep/src/app/[locale]/me/favorites/page.tsx`、`epbkend/expatth-backend/routes/api.php`、`ep-shared/api/requests.md`、`ep-shared/api/registry.md` | 前端已存在 `/api/me/favorites` BFF 和页面调用，但当前 shared 主需求池/已实现目录未登记，后端路由扫描未发现 `me/favorites`；旧文档还标记该路径已下线或冻结。 | 页面会调用一个没有当前合同和后端路由支撑的接口，容易被误认为“前端 API 已补完”。 | 已删除用户端 favorites 页面、BFF、个人中心入口和通用占位，不再调用或展示不存在的后端接口。 | fixed |
-| 2026-05-06 | Dcat Plus 后台审计 | `epbkend/expatth-backend/config/admin.php`、`epbkend/expatth-backend/app/Admin/routes.php`、`epbkend/expatth-backend/app/Admin/Controllers/*WalletReviewRequestController.php`、`epbkend/expatth-backend/app/Admin/Controllers/OrderController.php`、`epbkend/expatth-backend/app/Admin/Controllers/SystemSettingController.php` | Dcat 内置表连接跟随默认 PostgreSQL；钱包审核、订单状态金额、系统设置删除存在可绕过受控服务的后台写入口。 | 后台权限边界会漂移，资金流水、订单状态机和系统配置可能出现不一致。 | 已把 Dcat 内置表连接锁定为 MySQL；钱包审核与订单后台改为只读资源，审核只走 RowAction/Service；系统设置移除删除路由和删除动作；Dcat helpers 默认关闭。 | fixed |
-| 2026-05-06 | 当前阶段 API 审计 | `ep/src/app/api/merchants/featured/route.ts`、`ep/src/app/api/me/verification/route.ts`、`ep/src/app/api/me/location/route.ts`、`epbkend/expatth-backend/routes/api.php`、`ep-shared/api/requests.md`、`ep-shared/api/registry.md` | 用户端 BFF 调用了 Laravel 未注册且 registry 未登记 implemented 的上游路径。 | 首页推荐商家或潜在资料/位置入口会出现 502/404，且容易被误判为当前 API 已支撑。 | R-20260428-030 已补 `merchants/featured`、`me/verification`、`me/location` 后端实现、迁移和 registry。 | fixed |
-| 2026-05-07 | 商户端 API 审计 | `epmerchant/src/app/api/merchant/preferences/locale/route.ts`、`epmerchant/src/components/merchant/MerchantCapabilityManager.tsx`、`epmerchant/src/components/merchant/MerchantCapabilityForm.tsx`、`epbkend/expatth-backend/app/Services/Merchant/MerchantOrderService.php`、`ep-shared/api/registry.md` | 商家偏好语言 BFF 走到用户端 `me/locale`；商家订单 registry 声称的履约/结算/信用摘要未全部由代码返回；能力配置仍靠手填 `standardServiceCode`。 | 商家设置会落入错误鉴权域；订单履约/结算/信用展示不能按最新流程闭环；商家能力配置容易因 code 错误导致推荐链路无候选。 | R-20260428-031 已修为商家域上游；R-20260428-032 已补商家订单目标状态、履约、结算、信用和评价摘要；R-20260428-033 已新增标准服务只读 BFF 并改为下拉选择。 | fixed |
-| 2026-05-07 | 商家资料/实名/位置/状态机审计 | `epmerchant/src/app/[locale]/merchant/profile/info/page.tsx`、`epmerchant/src/app/[locale]/merchant/profile/verification/page.tsx`、`epbkend/expatth-backend/app/Services/Merchant/MerchantProfileService.php`、`MerchantVerificationService.php`、`MerchantMatchingService.php`、`OrderWorkflowService.php`、`bootstrap/app.php` | 商家资料 API/UI 未采集位置和服务半径；普通资料保存会创建或覆盖实名 pending 记录；状态机缺迟到、拒单、未履约、争议退回等失败动作；商家域错误响应仍有 raw English 和 `$request->all()`。 | 推荐距离和服务范围不可靠；实名审核可能被资料保存误改；失败履约无法闭环到信用/结算；前端无法稳定按错误码恢复。 | R-034/R-035 已拆资料与实名并补位置；R-036 已补 failure-action 和 after_sales 转移；R-037 已补商家域 FormRequest、ApiProblem 与 debug 屏蔽。 | fixed |
-| 2026-05-07 | 新边界审查 | `ep/src/app/api/location/resolve/route.ts`、`epbkend/expatth-backend/routes/api.php`、`ep-shared/api/requests.md`、`ep-shared/api/registry.md` | 用户端首页定位 BFF 代理到 Laravel `/api/v1/location/resolve`，但 shared 和后端未登记真实接口。 | 首页位置解析依赖前端兜底，推荐距离链路缺少可信后端边界。 | 已纳入 R-030，补 registry 合同；后端新增 `LocationResolveController` / `LocationResolveService`，用户端继续只走 BFF。 | fixed |
+> 完整历史记录（含影响位置、风险、修正动作）见 `ep-shared/data/violations.json`。
+> 2026-05-04 ～ 2026-05-08 已修复 7 条越界（favorites BFF、Dcat 连接边界、API registry 缺口、商家域鉴权、资料/实名分离、位置接口、N+1 列表），全部 fixed，详见 JSON。
+
+| 日期 | 来源 | 越界行为摘要 | 状态 |
+| ---- | ---- | ------------ | ---- |
+| 2026-05-10 | 代码审计 | `orders-permissions.ts` 硬编码订单状态判断逻辑，违反前端边界 | open |
+| 2026-05-10 | 代码审计 | `epmerchant` 硬编码取消罚款 20%，违反金额规则边界 | accepted-temporary（删除条件：支付网关接入后改为后端下发） |
 
 ## 15. 规则成长候选
 
-候选状态只能是 `candidate`、`promoted`、`rejected`。
+候选状态只能是 `candidate`、`promoted`、`rejected`。已 `promoted` 的条目已并入正文，不在此重复。
 
 | 日期 | 来源 | 类别 | 等级 | 范围 | 规则 | 触发 | 检查方式 | 去向 | 状态 |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- | -------- | ---- | ---- |
-| 2026-05-04 | 用户确认 | API 闸门 | 必须 | ExpatTH | 补全前端 API 前必须确认前端、BFF、shared、后端路由和实现状态；状态不清不写业务代码。 | 补全前端 API | 路由扫描、shared 登记、后端路由检查 | `PROJECT_RULES.md` 第 4 节 | promoted |
-| 2026-05-04 | 用户确认 | 规则成长 | 必须 | 全局 + ExpatTH | 每次任务结束发现更好建议时，先记为候选，满足条件后再升级规则。 | 任务结束复盘 | 候选表和脚本参数检查 | `PROJECT_RULES.md` 第 6 节、全局 skill | promoted |
-| 2026-05-04 | 用户确认 | 开发风格 | 应该 | ExpatTH | 开发风格默认采用 PSR-12、TypeScript/ESLint/Next、RESTful、RFC 2119 等通用标准；项目现有风格优先。 | 新增代码、重构、API 设计 | lint、格式化、合同检查、代码审查 | `PROJECT_RULES.md` 第 2 节 | promoted |
-| 2026-05-04 | 用户确认 | 规则追加 | 必须 | 全局 + ExpatTH | 新规则必须先按类别、等级、范围、规则、触发、检查方式、去向标准化，再进入 workflow 或 skill。 | 新增规则或开发习惯 | `growth-hook.mjs` 参数检查 | `PROJECT_RULES.md` 第 6 节、全局 skill | promoted |
-| 2026-05-04 | 用户确认 | 多智能体协同 | 应该 | 全局 + ExpatTH | 中大型且可拆分任务应该异步分发给多智能体协同开发，再由 Codex 总控统一审查。 | 中大型开发、跨模块、跨仓库 | 写集检查、依赖检查、统一 diff 审查、匹配验证 | `PROJECT_RULES.md` 第 5 节、全局 skill | promoted |
-| 2026-05-04 | 用户确认 | 专业协作 | 应该 | 全局 + ExpatTH | 需求有更好实现方式时，先说明目标、风险、取舍和推荐方案，再执行。 | 用户需求、架构方案或实现方式存在明显更优路径 | 回复中说明影响范围、风险、替代方案和用户确认结果 | `PROJECT_RULES.md` 第 2 节、全局 skill | promoted |
-| 2026-05-04 | 用户确认 | 任务指令提炼 | 应该 | 全局 + ExpatTH | 复杂或含混需求应提炼成一句话专业任务命令：范围、目标、约束、验收。 | 需求较长、目标含混、任务拆分前 | 回复或计划中给出压缩后的任务命令 | `PROJECT_RULES.md` 第 2 节、全局 skill | promoted |
-| 2026-05-04 | 用户确认 | 顶层审查 | 应该 | 全局 | 输入 `/topcheck` 时，优先审查当前提问、交互方式和任务表达，给出高视角建设性意见，并压缩成下一句专业任务命令。 | `/topcheck`、顶尖视角、当前提问、交互校准 | 输出包含一句话判断、表达改进点、建议问法或推进方式、下一句专业任务命令 | 全局 `topcheck` skill | promoted |
-| 2026-05-05 | 用户确认 | 对话命令 | 应该 | 全局 + ExpatTH | `/help` 列出协作命令；`/topro` 压缩任务；`/teamwork` 拆并行任务；`/codecheck` 进入审查；`/logerror` 记录失败和防复发。 | 用户输入对应斜杠命令 | 全局 `workflow-command-shortcuts` skill 和 `/help` 文档 | 全局 skill、`EXPATTH_HELP.md` | promoted |
-| 2026-05-05 | 用户确认 | 项目 skills | 应该 | ExpatTH | 新增 `expatth-api-gate`、`expatth-ui-system`、`expatth-release-check` 三个项目专用 skills，分别覆盖 API 闸门、UI 边界和交付验证。 | API 联调、UI 开发、交付前检查 | skill 文件存在且触发描述清晰 | 全局 skills、`PROJECT_RULES.md` | promoted |
-| 2026-05-05 | 用户确认 | 前端边界 | 必须 | ExpatTH | 前端只做页面、组件、BFF、i18n、样式、输入、展示和数据适配；业务主态、金额、权限、匹配、履约推进必须由后端和 shared 合同约束。 | 前端功能开发、BFF、UI 接口联调 | 第 8 节边界检查、API gate、代码审查 | `PROJECT_RULES.md` 第 8 节、`docs/boundaries.md` | promoted |
-| 2026-05-05 | 用户反馈 | 前端边界 | 应该 | ExpatTH | 用户可见业务文案必须来自后端合同或shared登记配置，不在页面局部维护内部code到文案的长期映射 | 内部code出现在用户界面、订单/支付/评价等展示字段缺失 | rg局部code-to-label映射并核对api/requests缺口登记 | PROJECT_RULES.md第8节与docs/boundaries.md | candidate |
-| 2026-05-05 | 用户反馈 | UI文案 | 必须 | ExpatTH | 无用户明确要求时不在弹层卡片页面添加解释型副文案规则说明或使用说明 | 前端UI新增标题以外的说明文字 | rg检查新增文案并对照用户需求和必要错误合规安全空状态例外 | PROJECT_RULES.md第8节 | promoted |
-| 2026-05-05 | 用户反馈 | 认证入口 | 应该 | ep | 需要登录的用户端入口必须生成带next的登录地址且登录页必须提供保留next的注册入口 | 新增auth-gated链接或未登录拦截 | `rg auth/login` 无裸登录链接，统一使用 `buildLoginHref` / `buildRegisterHref` | PROJECT_RULES.md 规则成长候选 | candidate |
-| 2026-05-05 | 用户反馈 | 认证门禁 | 必须 | ep | 用户端受保护页面必须由路由门禁重定向；需登录API收到401必须统一清session并跳登录，不在页面渲染未登录卡片 | 新增受保护页面或调用需登录BFF/API | curl无cookie访问受保护路由应307到auth/login；rg受保护路由无guestTip/goLogin残留 | PROJECT_RULES.md规则成长候选 | candidate |
-| 2026-05-05 | 用户反馈 | 费用展示 | 必须 | ExpatTH | 用户端费用明细只展示后端pricing，顺序为服务小计、平台服务费、税费、应付合计，前端不得重算金额或展示商家结算。 | 用户端订单、支付或报价费用展示 | rg费用明细并核对pricing字段；后端金额测试覆盖1%平台费和7%税费 | PROJECT_RULES.md第8节、expatth-codex-workflow skill | promoted |
-| 2026-05-06 | Dcat后台数据库核查 | 数据库边界 | 必须 | ExpatTH/epbkend | Dcat Plus后台仍使用MySQL/default connection时，不得直接把后端默认连接切到PostgreSQL。 | 数据库迁移、PostgreSQL能力接入、后台系统调整 | config:show database.default、config/admin.php、schema-plan、postgres-clean-rewrite | PROJECT_RULES.md、db/schema-plan.md、db/postgres-clean-rewrite.md | promoted |
-| 2026-05-06 | 用户确认 | 数据库能力库 | 必须 | ExpatTH/epbkend | 当前阶段 MySQL 是业务事实源；PostgreSQL 只作为距离搜索、推荐算法、AI 语义搜索和多语言模糊检索的能力读模型库。 | 数据库设计、推荐能力、AI搜索、后台同步 | config:show database.default、能力库同步任务、schema-plan、postgres-clean-rewrite | PROJECT_RULES.md、db/schema-plan.md、db/postgres-clean-rewrite.md | promoted |
-| 2026-05-07 | 构建卡住复盘 | 验证流程 | 应该 | ep | Next 16 用户端生产构建在本机验证优先使用 npm run build 指向的 webpack 构建；Turbopack 卡在 compile 时先检查 .next/lock 和残留 next build 进程。 | npm run build 卡住或构建验证 | npm run build、.next/diagnostics/build-diagnostics.json、.next/lock | PROJECT_RULES.md | candidate |
+| 2026-05-05 | 用户反馈 | 前端边界 | 应该 | ExpatTH | 用户可见业务文案必须来自后端合同或 shared 登记配置，不在页面局部维护内部 code 到文案的长期映射 | 内部 code 出现在用户界面、订单/支付/评价等展示字段缺失 | rg 局部 code-to-label 映射并核对 api/requests 缺口登记 | `PROJECT_RULES.md` 第 8 节与 `docs/boundaries.md` | candidate |
+| 2026-05-05 | 用户反馈 | 认证入口 | 应该 | ep | 需要登录的用户端入口必须生成带 next 的登录地址，且登录页必须提供保留 next 的注册入口 | 新增 auth-gated 链接或未登录拦截 | `rg auth/login` 无裸登录链接，统一使用 `buildLoginHref` / `buildRegisterHref` | `PROJECT_RULES.md` 第 8 节 | candidate |
+| 2026-05-05 | 用户反馈 | 认证门禁 | 必须 | ep | 用户端受保护页面必须由路由门禁重定向；需登录 API 收到 401 必须统一清 session 并跳登录，不在页面渲染未登录卡片 | 新增受保护页面或调用需登录 BFF/API | curl 无 cookie 访问受保护路由应 307 到 auth/login；rg 受保护路由无 guestTip/goLogin 残留 | `PROJECT_RULES.md` 第 8 节 | candidate |
+| 2026-05-07 | 构建卡住复盘 | 验证流程 | 应该 | ep | Next 用户端生产构建在本机验证优先使用 `npm run build` 指向的 webpack 构建；Turbopack 卡在 compile 时先检查 `.next/lock` 和残留 next build 进程 | npm run build 卡住或构建验证 | `npm run build`、`.next/diagnostics/build-diagnostics.json`、`.next/lock` | `PROJECT_RULES.md` 第 13 节 | candidate |
