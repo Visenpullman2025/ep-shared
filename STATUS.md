@@ -118,6 +118,8 @@
 | 前端硬编码取消罚款 20% | epmerchant | 🟡 中 | 🔵 accepted-temporary（等支付网关） |
 | services/ 与 capabilities/ 并存 | epmerchant | 🟡 中 | 🔵 过渡期保留，v1.8 前确定边界 |
 | 多个页面超行数限制 | ep profile 380行; epmerchant services 435行 | 🟡 中 | ✅ 拆出 useProfileActions / useServiceEditor hook，页面降至 153/160 行 |
+| workflowStatus 出现在钱包字段 | ep/src/lib/wallet.ts:111 | 🟡 中 | ✅ 移除，钱包记录只读 status / reviewStatus |
+| StandardServiceController 未 eager load | epbkend StandardServiceController | 🟡 中 | ✅ findByCode 加 with('requirementTemplates')，模型走内存过滤 |
 
 ---
 
@@ -135,6 +137,8 @@
 - 废弃 quote/ 目录已不存在 ✅
 - ep/profile page.tsx 380→153 行（useProfileActions hook） ✅
 - epmerchant/services/[serviceId] page.tsx 435→160 行（useServiceEditor hook） ✅
+- wallet.ts 移除钱包记录 workflowStatus 字段越界引用 ✅
+- StandardServiceController findByCode 加 eager load，消除 N+1 ✅
 - services/ 与 capabilities/ 并存 → 过渡期保留，v1.8 前确定边界 🔵
 
 ### v1.5 — 支付网关 + 结算自动化（等外部申请）
