@@ -114,10 +114,10 @@
 | 前端硬编码订单状态判断 | ep/orders-permissions.ts | 🔴 高 | ✅ 改为后端下发 nextAction |
 | API 响应格式不统一 | ep/epmerchant | 🟡 中 | ✅ 统一为 {list, listCount} |
 | locale 默认值 'zh' 硬编码 | 后端 12 处 Controller | 🟢 低 | ✅ 已清除（middleware 统一处理） |
-| 废弃 quote/ 目录仍存在 | ep | 🟢 低 | ⏳ paths.ts 已清理，git rm 待执行 |
+| 废弃 quote/ 目录仍存在 | ep | 🟢 低 | ✅ 目录已不存在 |
 | 前端硬编码取消罚款 20% | epmerchant | 🟡 中 | 🔵 accepted-temporary（等支付网关） |
 | services/ 与 capabilities/ 并存 | epmerchant | 🟡 中 | 🔵 过渡期保留，v1.8 前确定边界 |
-| 多个页面超行数限制 | ep profile 380行; epmerchant services 435行 | 🟡 中 | 🔵 列入 v1.1 遗留，按需拆分 |
+| 多个页面超行数限制 | ep profile 380行; epmerchant services 435行 | 🟡 中 | ✅ 拆出 useProfileActions / useServiceEditor hook，页面降至 153/160 行 |
 
 ---
 
@@ -126,17 +126,16 @@
 ### v1.0 — 主交易链路跑通 ✅ 完成
 用户下单 → 商家 MQC → 用户确认 → 订单进入待支付。链路有真实后端支撑，前后端已联调。
 
-### v1.1 — 代码质量 & 边界修复 ✅ 基本完成
+### v1.1 — 代码质量 & 边界修复 ✅ 完成
 - MerchantPortalController 拆分为 4 个 Controller ✅
 - 前端状态判断改为后端下发 nextAction ✅
 - API 响应格式统一为 {list, listCount} ✅
 - locale 硬编码清除（middleware 统一处理）✅
-- dashboard 版本路线 + API Ref 模块 ✅
-- 废弃 quote/ 目录清理（paths.ts 已清理，git rm 待执行）⏳
-- 页面超行数、services/capabilities 边界 → 列入 v1.2
-- services/ 与 capabilities/ 边界确认
-- API 响应格式统一
-- 页面超行数逐步拆分
+- dashboard 版本路线 + API Ref 模块 + JS bug 修复 ✅
+- 废弃 quote/ 目录已不存在 ✅
+- ep/profile page.tsx 380→153 行（useProfileActions hook） ✅
+- epmerchant/services/[serviceId] page.tsx 435→160 行（useServiceEditor hook） ✅
+- services/ 与 capabilities/ 并存 → 过渡期保留，v1.8 前确定边界 🔵
 
 ### v1.5 — 支付网关 + 结算自动化（等外部申请）
 - 第三方支付接入（申请中）
