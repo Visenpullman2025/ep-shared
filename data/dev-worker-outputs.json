@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "id": 1,
+    "run_id": "WR-20260510181611-T-USER-FE-LOADING-001-UWNK",
+    "output_type": "system",
+    "content": "已批准开始并锁定任务。当前为手动安全模式，请运行：npm run dashboard:task -- T-USER-FE-LOADING-001",
+    "created_at": "2026-05-10 18:16:11"
+  }
+]

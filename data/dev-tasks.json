@@ -1,5 +1,25 @@
 [
   {
+    "id": "T-USER-FE-LOADING-001",
+    "requirement_id": "DR-20260511-003",
+    "title": "修复用户端双 loading 显示并统一加载边界",
+    "assignee_role": "customer-claude",
+    "repo": "ep",
+    "allowed_paths": "src/app/[locale]/**/loading.tsx; src/components/**/loading*; src/components/**/InlineLoading*; src/components/**/PageLoading*; src/app/[locale]/page.tsx; src/app/[locale]/orders/**; src/app/[locale]/me/**",
+    "forbidden_paths": "epbkend/*; epmerchant/*; ep-shared/*; 业务状态机; 金额/支付逻辑; auth/session 语义变更",
+    "read_first": "ep-shared/PROJECT_RULES.md; ep/AGENTS.md; ep/src/app/[locale]/loading.tsx; ep/src/components/InlineLoading*; ep/src/components/PageLoading*",
+    "implementation_scope": "定位双 loading 复现路径，统一 page-level 和 component-level loading 优先级，保留一个主 loading，局部加载改轻量骨架或不显示。",
+    "edge_cases": "首屏加载；登录跳转；订单列表空态；接口 401 门禁跳转；移动端 430px；慢网速下不重复挂载。",
+    "validation_commands": "npm run lint; browser smoke /zh /zh/orders /zh/me; inspect Network/DOM for duplicate loading assets",
+    "evidence_required": "before/after screenshot or browser notes; changed files; lint output; explanation of removed duplicate loading path",
+    "max_blast_radius": "仅用户端 loading 展示边界，不改 API 合同和业务数据。",
+    "branch_name": null,
+    "commit_sha": null,
+    "status": "working",
+    "created_at": "2026-05-10 18:10:49",
+    "updated_at": "2026-05-10 18:16:11"
+  },
+  {
     "id": "T-MERCHANT-BE-001",
     "requirement_id": "DR-20260511-002",
     "title": "后端审计并修正商家资料/实名/位置/状态机/错误响应边界",
@@ -38,26 +58,6 @@
     "status": "ready",
     "created_at": "2026-05-10 17:24:54",
     "updated_at": "2026-05-10 17:24:54"
-  },
-  {
-    "id": "T-USER-FE-LOADING-001",
-    "requirement_id": "DR-20260511-003",
-    "title": "修复用户端双 loading 显示并统一加载边界",
-    "assignee_role": "customer-claude",
-    "repo": "ep",
-    "allowed_paths": "src/app/[locale]/**/loading.tsx; src/components/**/loading*; src/components/**/InlineLoading*; src/components/**/PageLoading*; src/app/[locale]/page.tsx; src/app/[locale]/orders/**; src/app/[locale]/me/**",
-    "forbidden_paths": "epbkend/*; epmerchant/*; ep-shared/*; 业务状态机; 金额/支付逻辑; auth/session 语义变更",
-    "read_first": "ep-shared/PROJECT_RULES.md; ep/AGENTS.md; ep/src/app/[locale]/loading.tsx; ep/src/components/InlineLoading*; ep/src/components/PageLoading*",
-    "implementation_scope": "定位双 loading 复现路径，统一 page-level 和 component-level loading 优先级，保留一个主 loading，局部加载改轻量骨架或不显示。",
-    "edge_cases": "首屏加载；登录跳转；订单列表空态；接口 401 门禁跳转；移动端 430px；慢网速下不重复挂载。",
-    "validation_commands": "npm run lint; browser smoke /zh /zh/orders /zh/me; inspect Network/DOM for duplicate loading assets",
-    "evidence_required": "before/after screenshot or browser notes; changed files; lint output; explanation of removed duplicate loading path",
-    "max_blast_radius": "仅用户端 loading 展示边界，不改 API 合同和业务数据。",
-    "branch_name": null,
-    "commit_sha": null,
-    "status": "ready",
-    "created_at": "2026-05-10 18:10:49",
-    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "T-DASH-001",

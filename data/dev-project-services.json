@@ -12,7 +12,7 @@
     "status": "configured",
     "pid": null,
     "last_message": "固定端口已配置",
-    "updated_at": "2026-05-10 18:10:49"
+    "updated_at": "configuration-only"
   },
   {
     "key": "customer",
@@ -27,7 +27,7 @@
     "status": "configured",
     "pid": null,
     "last_message": "固定端口已配置",
-    "updated_at": "2026-05-10 18:10:49"
+    "updated_at": "configuration-only"
   },
   {
     "key": "merchant",
@@ -42,7 +42,7 @@
     "status": "configured",
     "pid": null,
     "last_message": "固定端口已配置",
-    "updated_at": "2026-05-10 18:10:49"
+    "updated_at": "configuration-only"
   },
   {
     "key": "dashboard",
@@ -57,6 +57,6 @@
     "status": "configured",
     "pid": null,
     "last_message": "固定端口已配置",
-    "updated_at": "2026-05-10 18:10:49"
+    "updated_at": "configuration-only"
   }
 ]

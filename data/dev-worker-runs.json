@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": "WR-20260510181611-T-USER-FE-LOADING-001-UWNK",
+    "task_id": "T-USER-FE-LOADING-001",
+    "assignee_role": "customer-claude",
+    "trigger_source": "dashboard",
+    "status": "waiting_manual",
+    "command": "npm run dashboard:task -- T-USER-FE-LOADING-001",
+    "started_at": "2026-05-10 18:16:11",
+    "finished_at": null,
+    "exit_code": null,
+    "duration_ms": null,
+    "prompt_snapshot": "# Claude Code Task: T-USER-FE-LOADING-001\n\n你是 customer-claude。你不是总控，不做架构扩张，不改共享合同，除非任务明确允许。\n\n## 为什么做\n- 问题簇：PC-USER-LOADING-001 用户端出现两个 loading，说明加载状态边界重复挂载\n- 动机：加载态是用户第一眼看到的基础体验。两个 loading 同时出现会让页面显得不可靠，也说明 route fallback 和组件内 loading 没有统一边界。\n- 根因假设：页面级 fallback、InlineLoading、PageLoading 或 Lottie 容器可能在同一路径同时渲染；缺少“单页只能有一个主 loading”的检查规则。\n- 重复证据：此前已多次出现重复 loading/重复小车问题；用户现在要求加入修复项，避免后续前端员工继续叠加局部 loading。\n\n## 本次需求\n- 需求：DR-20260511-003 用户端统一 loading 边界，消除双 loading 显示\n- 用户意图：用户端不要同时出现两个 loading；加载状态必须统一、克制、可复用。\n- 业务原因：重复 loading 会直接降低用户对服务可靠性的信任，尤其在下单和订单中心流程里会误判为卡顿或异常。\n- 工程原因：Next route fallback、页面内部 loading 和组件级 loading 必须有明确优先级，不能每个组件各自渲染主加载态。\n- 当前行为：用户端存在两个 loading 同屏显示的历史问题，具体页面需要由员工用浏览器复现并定位。\n- 正确行为：同一页面同一时刻只出现一个主 loading；局部区域需要加载时使用轻量骨架或空态，不再叠加全屏 loading。\n- 验收标准：浏览器 smoke 覆盖 /zh、/zh/orders、下单页和资料页；截图或日志证明不再出现双 loading；npm run lint 通过。\n- 本次不做：本任务不重做整体首页视觉，不新增 loading 组件体系，不改后端 API。\n\n## 你的任务\n- 标题：修复用户端双 loading 显示并统一加载边界\n- Repo：ep\n- 允许路径：src/app/[locale]/**/loading.tsx; src/components/**/loading*; src/components/**/InlineLoading*; src/components/**/PageLoading*; src/app/[locale]/page.tsx; src/app/[locale]/orders/**; src/app/[locale]/me/**\n- 禁止路径：epbkend/*; epmerchant/*; ep-shared/*; 业务状态机; 金额/支付逻辑; auth/session 语义变更\n- 先读文件：ep-shared/PROJECT_RULES.md; ep/AGENTS.md; ep/src/app/[locale]/loading.tsx; ep/src/components/InlineLoading*; ep/src/components/PageLoading*\n- 实现范围：定位双 loading 复现路径，统一 page-level 和 component-level loading 优先级，保留一个主 loading，局部加载改轻量骨架或不显示。\n- 边界案例：首屏加载；登录跳转；订单列表空态；接口 401 门禁跳转；移动端 430px；慢网速下不重复挂载。\n- 最大影响范围：仅用户端 loading 展示边界，不改 API 合同和业务数据。\n\n## 必须遵守的 guardrails\n- [single-primary-loading] 同一页面同一时刻只能出现一个主 loading，不能同时挂 PageLoading 和 InlineLoading。\n  检查：浏览器 smoke + DOM/Network 检查 loading 组件和 Lottie 请求。\n  失败处理：移除重复主 loading 或改为局部骨架。\n- [frontend-boundary] loading 修复不得改业务状态机、金额、auth/session 语义。\n  检查：检查 changed files 和 diff。\n  失败处理：回退越界逻辑，只保留展示边界修复。\n- [mobile-visual] 移动端 430px 不得出现 loading 重叠、遮挡底部导航或重复动画。\n  检查：Playwright/浏览器截图检查。\n  失败处理：调整布局或挂载边界后再提交。\n\n## 必须使用的 skills\n- expatth-maintainable-workflow\n  路径：/Users/bairy/.codex/skills/expatth-maintainable-workflow/SKILL.md\n  原因：用户端员工必须遵守 shared 合同和前端边界。\n- design-rules\n  路径：/Users/bairy/.codex/skills/design-rules/SKILL.md\n  原因：loading 是产品状态展示，必须遵守最小必要和可读性。\n- expatth-ui-system\n  路径：/Users/bairy/.codex/skills/expatth-ui-system/SKILL.md\n  原因：用户端 UI 需要沿用现有移动端 loading 和主题组件。\n- playwright\n  路径：/Users/bairy/.codex/skills/playwright/SKILL.md\n  原因：必须用浏览器烟测确认没有两个 loading 同屏。\n\n## 必须运行的验证\nnpm run lint; browser smoke /zh /zh/orders /zh/me; inspect Network/DOM for duplicate loading assets\n\n## 必须提交的证据\nbefore/after screenshot or browser notes; changed files; lint output; explanation of removed duplicate loading path\n\n## 汇报格式\n请按下面格式返回：\n1. 变更摘要\n2. 修改文件列表\n3. 已运行验证命令与结果\n4. 未完成/阻塞项\n5. 风险和后续建议\n\n禁止事项：\n- 不要改 forbiddenPaths。\n- 不要引入新框架、新数据库、新状态系统。\n- 不要只说完成，必须给验证证据。\n- 如果 shared 合同缺失，停止并报告 contract-missing。",
+    "created_at": "2026-05-10 18:16:11",
+    "updated_at": "2026-05-10 18:16:11"
+  }
+]
