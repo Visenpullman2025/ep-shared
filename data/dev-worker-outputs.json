@@ -1,5 +1,33 @@
 [
   {
+    "id": 5,
+    "run_id": "WR-20260510181611-T-USER-FE-LOADING-001-UWNK",
+    "output_type": "risk",
+    "content": "浏览器 smoke 未完成，不能证明移动端没有重复 car-loading.json。需要把员工执行改成可观测的终端 runner：记录 pid、stdout/stderr、started/heartbeat/finished、exit_code，并避免网页直接静默执行任意 shell。",
+    "created_at": "2026-05-10 18:48:56"
+  },
+  {
+    "id": 4,
+    "run_id": "WR-20260510181611-T-USER-FE-LOADING-001-UWNK",
+    "output_type": "validation",
+    "content": "npm run dashboard:task -- --list：可列出任务，T-USER-FE-LOADING-001 为 working。\nnpm run dashboard:task -- T-USER-FE-LOADING-001：可生成完整员工任务提示。\nnpm run lint：退出码 0；仍有 10 个 warning，均来自本任务外既有文件或 Supabase 相关未完成改动。\nPlaywright wrapper：失败，npx 需要访问 registry.npmjs.org，但当前网络 ENOTFOUND。\nChrome headless smoke：未产出截图，进程卡住后已停止。\ncurl /zh/orders 与 /zh/me：返回 307；curl /zh：卡住后已停止。",
+    "created_at": "2026-05-10 18:48:56"
+  },
+  {
+    "id": 3,
+    "run_id": "WR-20260510181611-T-USER-FE-LOADING-001-UWNK",
+    "output_type": "diff",
+    "content": "ep/src/app/[locale]/me/profile/page.tsx\nep/src/app/[locale]/me/recharge/page.tsx\nep/src/app/[locale]/orders/[orderNo]/review/page.tsx\nep/src/components/SecondaryPageShell.tsx",
+    "created_at": "2026-05-10 18:48:56"
+  },
+  {
+    "id": 2,
+    "run_id": "WR-20260510181611-T-USER-FE-LOADING-001-UWNK",
+    "output_type": "summary",
+    "content": "已执行用户端 loading 任务的终端闭环验证。代码侧移除了 profile、recharge、order review Suspense fallback 内重复 InlineLoading，并让 SecondaryPageShell 支持无 children 的 fallback；同时清理本次触达文件里的 unused import。由于浏览器自动化未能完成，任务不标成功。",
+    "created_at": "2026-05-10 18:48:56"
+  },
+  {
     "id": 1,
     "run_id": "WR-20260510181611-T-USER-FE-LOADING-001-UWNK",
     "output_type": "system",

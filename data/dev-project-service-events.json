@@ -1,1 +1,146 @@
-[]
+[
+  {
+    "id": 16,
+    "service_key": "customer",
+    "event_type": "stdout",
+    "message": "○ Compiling /[locale] ...\n",
+    "pid": 37765,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:37:16"
+  },
+  {
+    "id": 15,
+    "service_key": "backend",
+    "event_type": "stdout",
+    "message": " /favicon.ico ............................... ~ 500.60ms\n",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:37:12"
+  },
+  {
+    "id": 14,
+    "service_key": "backend",
+    "event_type": "stdout",
+    "message": "  2026-05-11 01:37:12",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:37:12"
+  },
+  {
+    "id": 13,
+    "service_key": "backend",
+    "event_type": "stdout",
+    "message": " ~ 1s\n",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:37:12"
+  },
+  {
+    "id": 12,
+    "service_key": "backend",
+    "event_type": "stdout",
+    "message": " ................................................",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:37:12"
+  },
+  {
+    "id": 11,
+    "service_key": "backend",
+    "event_type": "stdout",
+    "message": " /",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:37:12"
+  },
+  {
+    "id": 10,
+    "service_key": "backend",
+    "event_type": "stdout",
+    "message": "  2026-05-11 01:37:11",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:37:12"
+  },
+  {
+    "id": 9,
+    "service_key": "customer",
+    "event_type": "stdout",
+    "message": "✓ Ready in 881ms\n",
+    "pid": 37765,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:14"
+  },
+  {
+    "id": 8,
+    "service_key": "customer",
+    "event_type": "stderr",
+    "message": "⚠ The \"middleware\" file convention is deprecated. Please use \"proxy\" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy\n",
+    "pid": 37765,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:14"
+  },
+  {
+    "id": 7,
+    "service_key": "customer",
+    "event_type": "stdout",
+    "message": "- Local:         http://127.0.0.1:3001\n- Network:       http://127.0.0.1:3001\n- Environments: .env.local\n\n✓ Starting...\n",
+    "pid": 37765,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:13"
+  },
+  {
+    "id": 6,
+    "service_key": "customer",
+    "event_type": "stdout",
+    "message": "▲ Next.js 16.1.6 (Turbopack)\n",
+    "pid": 37765,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:13"
+  },
+  {
+    "id": 5,
+    "service_key": "customer",
+    "event_type": "stdout",
+    "message": "\n> expatth@0.1.0 dev\n> next dev --hostname 127.0.0.1 --port 3001\n\n",
+    "pid": 37765,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:13"
+  },
+  {
+    "id": 4,
+    "service_key": "customer",
+    "event_type": "start",
+    "message": "执行：npm run dev -- --hostname 127.0.0.1 --port 3001",
+    "pid": 37765,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:13"
+  },
+  {
+    "id": 3,
+    "service_key": "backend",
+    "event_type": "stdout",
+    "message": "  Press Ctrl+C to stop the server\n\n",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:06"
+  },
+  {
+    "id": 2,
+    "service_key": "backend",
+    "event_type": "stdout",
+    "message": "\n   INFO  Server running on [http://127.0.0.1:8000].  \n\n",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:06"
+  },
+  {
+    "id": 1,
+    "service_key": "backend",
+    "event_type": "start",
+    "message": "执行：php artisan serve --host=127.0.0.1 --port=8000",
+    "pid": 37547,
+    "exit_code": null,
+    "created_at": "2026-05-10 18:36:04"
+  }
+]
