@@ -40,5 +40,19 @@
     "status": "open",
     "created_at": "2026-05-10 17:24:54",
     "updated_at": "2026-05-10 17:24:54"
+  },
+  {
+    "id": "PC-USER-LOADING-001",
+    "title": "用户端出现两个 loading，说明加载状态边界重复挂载",
+    "motivation": "加载态是用户第一眼看到的基础体验。两个 loading 同时出现会让页面显得不可靠，也说明 route fallback 和组件内 loading 没有统一边界。",
+    "root_cause_hypothesis": "页面级 fallback、InlineLoading、PageLoading 或 Lottie 容器可能在同一路径同时渲染；缺少“单页只能有一个主 loading”的检查规则。",
+    "repeated_count": 2,
+    "repeated_evidence": "此前已多次出现重复 loading/重复小车问题；用户现在要求加入修复项，避免后续前端员工继续叠加局部 loading。",
+    "affected_flows": "用户端首页、订单中心、下单页、资料页、所有 route-level loading",
+    "risk_level": "P2",
+    "owner_role": "customer-claude",
+    "status": "open",
+    "created_at": "2026-05-10 18:10:49",
+    "updated_at": "2026-05-10 18:10:49"
   }
 ]

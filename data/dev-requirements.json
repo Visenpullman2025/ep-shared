@@ -34,5 +34,23 @@
     "status": "ready",
     "created_at": "2026-05-10 17:24:54",
     "updated_at": "2026-05-10 17:24:54"
+  },
+  {
+    "id": "DR-20260511-003",
+    "problem_cluster_id": "PC-USER-LOADING-001",
+    "title": "用户端统一 loading 边界，消除双 loading 显示",
+    "user_intent": "用户端不要同时出现两个 loading；加载状态必须统一、克制、可复用。",
+    "business_reason": "重复 loading 会直接降低用户对服务可靠性的信任，尤其在下单和订单中心流程里会误判为卡顿或异常。",
+    "engineering_reason": "Next route fallback、页面内部 loading 和组件级 loading 必须有明确优先级，不能每个组件各自渲染主加载态。",
+    "current_behavior": "用户端存在两个 loading 同屏显示的历史问题，具体页面需要由员工用浏览器复现并定位。",
+    "expected_behavior": "同一页面同一时刻只出现一个主 loading；局部区域需要加载时使用轻量骨架或空态，不再叠加全屏 loading。",
+    "acceptance_criteria": "浏览器 smoke 覆盖 /zh、/zh/orders、下单页和资料页；截图或日志证明不再出现双 loading；npm run lint 通过。",
+    "non_goals": "本任务不重做整体首页视觉，不新增 loading 组件体系，不改后端 API。",
+    "data_concerns": "不得用假延迟或假数据掩盖 loading；必须基于真实加载状态处理。",
+    "boundary_concerns": "前端只处理展示边界，不改业务状态机、不改金额、不绕过 authFetch。",
+    "priority": "P2",
+    "status": "ready",
+    "created_at": "2026-05-10 18:10:49",
+    "updated_at": "2026-05-10 18:10:49"
   }
 ]

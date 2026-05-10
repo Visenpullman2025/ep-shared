@@ -7,7 +7,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/orders, GET /api/v1/orders/{orderNo}",
     "notes": "订单中心需区分「去评价 / 查看评价」；旧需求在 api-user-request 已列。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-002",
@@ -17,7 +17,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/orders/{orderNo}/my-review",
     "notes": "评价入口需主评/追评结构一致。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-003",
@@ -27,7 +27,7 @@
     "phase": "p1",
     "api_ref": "POST /api/v1/payments/intent",
     "notes": "防止客户端篡改金额；与现网 `PaymentSettlementService` 类逻辑一致；新主链下**额外**受 `workflowStatus` 与是否允许付款约束（见 `user-api` §6、`error-codes`）。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-004",
@@ -37,7 +37,7 @@
     "phase": "p1",
     "api_ref": "POST /api/v1/merchant/reviews, POST /api/v1/reviews, POST /api/v1/merchant/reviews",
     "notes": "与客户互评；原 api-merchant-request 待实现。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-005",
@@ -47,7 +47,7 @@
     "phase": "p1a",
     "api_ref": "GET /api/v1/services, GET /api/v1/standard-services, GET /api/v1/standard-services/{code}, GET /api/v1/standard-services*",
     "notes": "用户主入口为 **`standardServiceCode`**；与旧 `GET /api/v1/services` 解耦（见 `docs/boundaries.md`）。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-006",
@@ -57,7 +57,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/standard-services/{code}/requirement-template, GET /api/v1/standard-services/{code}/requirement-template",
     "notes": "需求采集与 **QuotePreview** 计价依赖同一模板版本。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-007",
@@ -67,7 +67,7 @@
     "phase": "p1a",
     "api_ref": "POST /api/v1/services/{id}/price-preview, POST /api/v1/standard-services/{code}/quote-preview, POST /api/v1/standard-services/{code}/quote-preview",
     "notes": "粗报价**落库**为可引用实体，与旧 `POST /api/v1/services/{id}/price-preview` 并存期需策略。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-008",
@@ -77,7 +77,7 @@
     "phase": "p1b",
     "api_ref": "POST /api/v1/orders",
     "notes": "订单必须绑定 **StandardService** 主线：`standardServiceCode`、`requirementPayload`、**`quotePreviewId`**，并进入 **matching_merchants** 等态（见 `state-machine`）。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-009",
@@ -87,7 +87,7 @@
     "phase": "p1",
     "api_ref": "POST /api/v1/orders/{orderNo}/confirm-merchant-quote",
     "notes": "用户在 **waiting_user_confirmation** 态接受**唯一**或**主**确认单，以进入 **waiting_payment_or_authorization**（见 `state-machine`）。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-010",
@@ -97,7 +97,7 @@
     "phase": "p1b",
     "api_ref": "",
     "notes": "现网枚举与 **目标**主态（`draft_requirement` …）**字面值不同**；`nextAction` 仅为引导字段，**不**是独立子状态机（见 `state-machine` §6）。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-011",
@@ -107,7 +107,7 @@
     "phase": "p1",
     "api_ref": "POST /api/v1/orders/{orderNo}/after-sales",
     "notes": "订单在允许态进入 **after_sales** 子域；表 **`after_sales_cases`**（`schema-plan`）。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-012",
@@ -117,7 +117,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/orders, GET /api/v1/orders/{orderNo}",
     "notes": "列表/详情在「匹配 / 等商家确认 / 等用户确认 / 等支付」阶段需展示**结构化**信息，**避免**各端自猜。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-013",
@@ -127,7 +127,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/merchant/capabilities, POST /api/v1/merchant/capabilities, GET /api/v1/merchant/capabilities/{id}, PUT /api/v1/merchant/capabilities/{id}, POST /merchant/services",
     "notes": "替代长期依赖「旧 **merchant services** 行即能力」的心智；绑定 **`standardServiceCode`**。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-014",
@@ -137,7 +137,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/merchant/order-requests, POST /api/v1/merchant/order-requests/{candidateId}/quote-confirmation",
     "notes": "商家在 **order-requests** 列表中处理 **MerchantCandidate**，提交 **MerchantQuoteConfirmation**。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-015",
@@ -147,7 +147,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/merchant/credit-profile",
     "notes": "表 **`merchant_credit_profiles` / `merchant_credit_events`**。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-016",
@@ -157,7 +157,7 @@
     "phase": "p1",
     "api_ref": "",
     "notes": "现网 `GET/PUT /api/v1/merchant/availability` 以 **`openDates[]`** 为主；新主链需与 **MerchantCandidate、MerchantQuoteConfirmation** 的**可服务时段**一致。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-017",
@@ -167,7 +167,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/quote-previews/{id}",
     "notes": "长会话中恢复 **`quotePreviewId` 或防重复下单** 可能需要 **`GET /api/v1/quote-previews/{id}`**（或等价挂在 standard-services 下）；**非** M 端 scope。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-018",
@@ -177,7 +177,7 @@
     "phase": "p1",
     "api_ref": "POST /api/orders, POST /api/v1/orders, POST /api/v1/orders, POST /api/orders",
     "notes": "P0.5 只读审查：`ep` 当前仅 BFF 代理 `GET/POST` 至旧 `/api/v1/services/*`，**无** 对 `standard-services` / `quote-preview` 的 BFF；`POST /api/orders` 与 `orders/new` 仍依赖 `serviceId` 与 `processData` 等旧体。P1 接入新主链前，需在 **ep",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-019",
@@ -187,7 +187,7 @@
     "phase": "p1",
     "api_ref": "",
     "notes": "`ep` 旧入口使用 `src/app/[locale]/services/[id]/page`、`orders/new?serviceId=`，与 **boundaries** 新主入口 `standardServiceCode` 冲突；Oauth/login `next` 与 profile 补全深链也携带旧 query。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-020",
@@ -197,7 +197,7 @@
     "phase": "p2",
     "api_ref": "POST /api/v1/orders",
     "notes": "用户不直接选商家；平台需要按商家能力、星级、服务质量、响应速度、距离、价格、档期与就绪状态生成候选，并保存推荐原因，避免推荐结果不可解释。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-021",
@@ -207,7 +207,7 @@
     "phase": "p2",
     "api_ref": "",
     "notes": "R-016 只定义了 capacity/timeSlots 方向；P2 需要明确商家是否可接单、某能力是否可服务、档期是否足够支撑匹配。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-022",
@@ -217,7 +217,7 @@
     "phase": "p2",
     "api_ref": "",
     "notes": "空调清洗、保洁等行业需要不同字段、步骤和计价逻辑；不能为每个行业写硬编码控制器。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-023",
@@ -227,7 +227,7 @@
     "phase": "p2",
     "api_ref": "POST /api/v1/payments/intent",
     "notes": "用户锁定订单后，款项进入平台代管；平台按服务小计收取 1% 服务费作为平台收益，并按服务小计收取 7% 税费，服务完成后向商家结算服务小计。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-024",
@@ -237,7 +237,7 @@
     "phase": "p3",
     "api_ref": "",
     "notes": "服务开始、完工、迟到、未履约、售后判责等必须形成事件流，并影响商家推荐等级和信用分；用户侧恶意行为也要进入信用事件。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-025",
@@ -247,7 +247,7 @@
     "phase": "p3",
     "api_ref": "POST /api/v1/reviews, POST /api/v1/merchant/reviews, POST /api/v1/reviews, POST /api/v1/merchant/reviews",
     "notes": "服务完成后用户评价商家、商家评价用户，评价和服务摘要可选择同步到广场，但必须脱敏。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-026",
@@ -257,7 +257,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/orders, GET /api/v1/orders/{orderNo}, POST /api/v1/orders, POST /api/v1/payments/intent",
     "notes": "用户端支付弹层曾把订单里的内部 code `on-site-cleaning` 展示成「服务」，说明订单响应里标准服务身份与展示名不够稳定。前端不得靠局部 code-to-label map 修一个漏一个。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-027",
@@ -267,7 +267,7 @@
     "phase": "p1",
     "api_ref": "",
     "notes": "当前确认 MySQL 继续作为业务事实源；PostgreSQL 只在距离搜索、推荐算法、AI 语义搜索和多语言模糊检索需要时作为能力读模型库，优先选择阿里云 RDS PostgreSQL。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-028",
@@ -277,7 +277,7 @@
     "phase": "p1",
     "api_ref": "",
     "notes": "能力库允许最终一致；早期不引入 CDC，默认每 6 小时从 MySQL 抽取变化数据 upsert 到 PostgreSQL 能力读模型。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-029",
@@ -287,7 +287,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/search",
     "notes": "搜索和推荐需要理解用户自然语言、服务文本、商家介绍和公开评价；PostgreSQL 能力库使用 pgvector 承载 embedding，不替代 MySQL 交易事实。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-030",
@@ -297,7 +297,7 @@
     "phase": "p1",
     "api_ref": "GET /api/v1/merchants/featured, GET /api/v1/location/resolve, GET /merchants/featured, GET /location/resolve, GET /me/verification, GET /me/location, POST /me/verification, POST /me/location",
     "notes": "当前阶段审计发现用户端存在 BFF 调用后端未注册路径。按 API 固定闸门，这些入口不能被视为已完成；2026-05-07 已选择补后端实现。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-031",
@@ -307,7 +307,7 @@
     "phase": "p1",
     "api_ref": "POST /api/merchant/preferences/locale, POST /api/v1/me/locale, POST /api/v1/merchant/preferences/locale, POST /api/merchant/preferences/locale, POST /api/v1/merchant/preferences/locale",
     "notes": "审计发现商家端 `POST /api/merchant/preferences/locale` BFF 曾请求用户端 `POST /api/v1/me/locale`。当前已改为商家域 `POST /api/v1/merchant/preferences/locale`，避免把商家会话打到用户鉴权域。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-032",
@@ -317,7 +317,7 @@
     "phase": "p2",
     "api_ref": "GET /api/v1/merchant/orders, GET /api/v1/merchant/orders, POST /api/v1/merchant/orders/{orderNo}/start-service",
     "notes": "`api/registry.md` 已写 `GET /api/v1/merchant/orders` 追加返回 `pricing`、`fulfillmentEvents`、`settlement`、`creditImpact`。当前已由 `MerchantOrderService` 补齐列表项和动作响应：`workflowStatus` 返回 shared 目标态，`legacyWorkflowS",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-033",
@@ -327,7 +327,7 @@
     "phase": "p2",
     "api_ref": "POST /api/v1/merchant/capabilities, GET /api/v1/standard-services, GET /api/v1/standard-services",
     "notes": "商家能力 `POST /api/v1/merchant/capabilities` 已要求 `standardServiceCode`，后端也校验标准服务存在；此前商家端能力页面让商家手填 code，没有从平台标准服务配置读取可选项。当前已通过商家 BFF 复用公共 `GET /api/v1/standard-services`，能力表单改为标准服务下拉选择。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-034",
@@ -337,7 +337,7 @@
     "phase": "p1",
     "api_ref": "POST /api/v1/merchant/profile",
     "notes": "当前 `POST /api/v1/merchant/profile` 只维护商家名称、联系电话、简介、在线状态和服务类型。数据库 `yipai_merchants` 已有 `lat`、`lng`、`areas`、`service_radius_meters`、`ready_status` 等字段，推荐服务也会用商家经纬度计算距离；但商家端资料页没有采集地址、经纬度、服务半径、服务区域，后端资料 A",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-035",
@@ -347,7 +347,7 @@
     "phase": "p1",
     "api_ref": "POST /api/v1/merchant/profile, POST /api/v1/merchant/verification",
     "notes": "审计发现 `MerchantProfileService::updateProfile` 曾在每次保存资料时调用实名 pending upsert；缺字段时会把已有 pending 实名材料写成 `null`，没有 pending 时会创建空实名申请，并且会把非 pending 商家状态改回 `pending`。这会让普通资料保存影响实名审核，且缺少必填校验和审核状态保护。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-036",
@@ -357,7 +357,7 @@
     "phase": "p1",
     "api_ref": "POST /api/v1/merchant/orders/{orderNo}/failure-action",
     "notes": "商家端当前可通过后端推进 `merchant_confirmed`、`in_service`、`merchant_completed`、`cancelled`，并由 `OrderWorkflowService` 校验转移。当前已新增商家异常动作入口，支持迟到、未履约、改约、争议和售后退回履约中；`after_sales` 已进入 transition map，并由后端写履约事件和信用事件。",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
     "id": "R-20260428-037",
@@ -367,6 +367,6 @@
     "phase": "p1b",
     "api_ref": "",
     "notes": "后端已有 `ApiResponse` 结构，但商家域仍大量由 Service 抛出英文 `HttpException`，Controller 多处直接使用 `$request->all()`，缺少 FormRequest 和稳定业务错误码。当前已补商家订单动作、异常动作、可用性、语言偏好的 FormRequest；新增 `ApiProblem`，商家域异常不再返回 debug 文件行号，结构化返回",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   }
 ]

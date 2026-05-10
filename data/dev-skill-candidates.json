@@ -37,5 +37,18 @@
     "status": "candidate",
     "created_at": "2026-05-10 17:24:54",
     "updated_at": "2026-05-10 17:24:54"
+  },
+  {
+    "id": "SKILL-CAND-004",
+    "problem_cluster_id": "PC-USER-LOADING-001",
+    "title": "用户端单一主 loading 规则",
+    "trigger_rule": "当用户端页面、route loading、InlineLoading 或 PageLoading 被修改时触发。",
+    "scope": "ep",
+    "check_method": "浏览器检查同页只出现一个主 loading，局部区域使用骨架或空态。",
+    "destination": ".agents/skills/expatth-codex-workflow 或 expatth-ui-system",
+    "repeated_threshold": 2,
+    "status": "candidate",
+    "created_at": "2026-05-10 18:10:49",
+    "updated_at": "2026-05-10 18:10:49"
   }
 ]

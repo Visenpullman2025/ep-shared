@@ -1,6 +1,6 @@
 [
   {
-    "id": 24,
+    "id": 26,
     "date": "2026-05-10",
     "source": "代码审计",
     "location": "ep-shared/PROJECT_RULES.md §14",
@@ -9,10 +9,10 @@
     "action": "",
     "status": "open",
     "delete_condition": null,
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   },
   {
-    "id": 25,
+    "id": 27,
     "date": "2026-05-10",
     "source": "代码审计",
     "location": "ep-shared/PROJECT_RULES.md §14",
@@ -21,6 +21,6 @@
     "action": "",
     "status": "accepted-temporary",
     "delete_condition": "支付网关接入后改为后端下发",
-    "updated_at": "2026-05-10 17:55:02"
+    "updated_at": "2026-05-10 18:10:49"
   }
 ]

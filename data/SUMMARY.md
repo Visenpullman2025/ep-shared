@@ -23,16 +23,18 @@
 
 ## 开发控制面
 
-- 问题簇：3 个，其中 P1+：3 个
-- 员工任务：3 条，ready/working：2 条
-- Skill 候选：3 条，待晋升：3 条
+- 问题簇：4 个，其中 P1+：3 个
+- 员工任务：4 条，ready/working：3 条
+- Skill 候选：4 条，待晋升：4 条
 - Plan 审核：0 条待审核，自动模式：关
 - 员工运行：0 条，待复审：0 条
+- 固定端口：后端 API / Dcat 后台 8000 / 用户端 3001 / 商户端 3002 / 开发控制面 3099
 
 ### 当前员工任务
 
 - [ready] T-MERCHANT-BE-001 · backend-claude · 后端审计并修正商家资料/实名/位置/状态机/错误响应边界
 - [ready] T-MERCHANT-FE-001 · merchant-claude · 商家端资料页按资料、实名、位置和状态动作分区
+- [ready] T-USER-FE-LOADING-001 · customer-claude · 修复用户端双 loading 显示并统一加载边界
 
 ### 待审核 Plan
 

@@ -1,74 +1,110 @@
 [
   {
-    "id": 1,
+    "id": 9,
     "task_id": "T-DASH-001",
     "skill_name": "expatth-maintainable-workflow",
     "skill_path": "/Users/bairy/.codex/skills/expatth-maintainable-workflow/SKILL.md",
     "reason": "处理 ExpatTH 工作流必须先读项目规则。",
     "required": 1,
-    "created_at": "2026-05-10 17:55:02"
+    "created_at": "2026-05-10 18:10:49"
   },
   {
-    "id": 2,
+    "id": 10,
     "task_id": "T-DASH-001",
     "skill_name": "engineering-boundaries",
     "skill_path": "/Users/bairy/.codex/skills/engineering-boundaries/SKILL.md",
     "reason": "dashboard 控制面持久化不能污染业务数据库或新增不必要基础设施。",
     "required": 1,
-    "created_at": "2026-05-10 17:55:02"
+    "created_at": "2026-05-10 18:10:49"
   },
   {
-    "id": 3,
+    "id": 11,
     "task_id": "T-DASH-001",
     "skill_name": "design-rules",
     "skill_path": "/Users/bairy/.codex/skills/design-rules/SKILL.md",
     "reason": "dashboard 是内部工具，界面必须聚焦主任务并隐藏低频项。",
     "required": 1,
-    "created_at": "2026-05-10 17:55:02"
+    "created_at": "2026-05-10 18:10:49"
   },
   {
-    "id": 4,
+    "id": 12,
     "task_id": "T-MERCHANT-BE-001",
     "skill_name": "expatth-maintainable-workflow",
     "skill_path": "/Users/bairy/.codex/skills/expatth-maintainable-workflow/SKILL.md",
     "reason": "后端员工必须遵守 shared 合同、状态机和仓库边界。",
     "required": 1,
-    "created_at": "2026-05-10 17:55:02"
+    "created_at": "2026-05-10 18:10:49"
   },
   {
-    "id": 5,
+    "id": 13,
     "task_id": "T-MERCHANT-BE-001",
     "skill_name": "engineering-boundaries",
     "skill_path": "/Users/bairy/.codex/skills/engineering-boundaries/SKILL.md",
     "reason": "后端员工不得引入新数据库、状态系统或绕开 Laravel 边界。",
     "required": 1,
-    "created_at": "2026-05-10 17:55:02"
+    "created_at": "2026-05-10 18:10:49"
   },
   {
-    "id": 6,
+    "id": 14,
     "task_id": "T-MERCHANT-FE-001",
     "skill_name": "expatth-maintainable-workflow",
     "skill_path": "/Users/bairy/.codex/skills/expatth-maintainable-workflow/SKILL.md",
     "reason": "商户端员工必须遵守 shared 合同和前端边界。",
     "required": 1,
-    "created_at": "2026-05-10 17:55:02"
+    "created_at": "2026-05-10 18:10:49"
   },
   {
-    "id": 7,
+    "id": 15,
     "task_id": "T-MERCHANT-FE-001",
     "skill_name": "design-rules",
     "skill_path": "/Users/bairy/.codex/skills/design-rules/SKILL.md",
     "reason": "商户端页面必须按产品界面标准处理信息层级和低频入口。",
     "required": 1,
-    "created_at": "2026-05-10 17:55:02"
+    "created_at": "2026-05-10 18:10:49"
   },
   {
-    "id": 8,
+    "id": 16,
     "task_id": "T-MERCHANT-FE-001",
     "skill_name": "expatth-ui-system",
     "skill_path": "/Users/bairy/.codex/skills/expatth-ui-system/SKILL.md",
     "reason": "商户端 UI 需要沿用 ExpatTH 现有主题和移动端体验。",
     "required": 1,
-    "created_at": "2026-05-10 17:55:02"
+    "created_at": "2026-05-10 18:10:49"
+  },
+  {
+    "id": 17,
+    "task_id": "T-USER-FE-LOADING-001",
+    "skill_name": "expatth-maintainable-workflow",
+    "skill_path": "/Users/bairy/.codex/skills/expatth-maintainable-workflow/SKILL.md",
+    "reason": "用户端员工必须遵守 shared 合同和前端边界。",
+    "required": 1,
+    "created_at": "2026-05-10 18:10:49"
+  },
+  {
+    "id": 18,
+    "task_id": "T-USER-FE-LOADING-001",
+    "skill_name": "design-rules",
+    "skill_path": "/Users/bairy/.codex/skills/design-rules/SKILL.md",
+    "reason": "loading 是产品状态展示，必须遵守最小必要和可读性。",
+    "required": 1,
+    "created_at": "2026-05-10 18:10:49"
+  },
+  {
+    "id": 19,
+    "task_id": "T-USER-FE-LOADING-001",
+    "skill_name": "expatth-ui-system",
+    "skill_path": "/Users/bairy/.codex/skills/expatth-ui-system/SKILL.md",
+    "reason": "用户端 UI 需要沿用现有移动端 loading 和主题组件。",
+    "required": 1,
+    "created_at": "2026-05-10 18:10:49"
+  },
+  {
+    "id": 20,
+    "task_id": "T-USER-FE-LOADING-001",
+    "skill_name": "playwright",
+    "skill_path": "/Users/bairy/.codex/skills/playwright/SKILL.md",
+    "reason": "必须用浏览器烟测确认没有两个 loading 同屏。",
+    "required": 1,
+    "created_at": "2026-05-10 18:10:49"
   }
 ]
