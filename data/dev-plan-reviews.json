@@ -1,0 +1,15 @@
+[
+  {
+    "id": "PLAN-20260511-DASHBOARD-CONTROL-001",
+    "session_id": "S-20260511-LOCALNOW-DASHBOARD",
+    "title": "开发控制面审批、员工运行与输出回写升级",
+    "plan_body": "新增 plan 审批、任务技能、员工运行、输出回写、分派复盘和自动模式设置；UI 只展示待审核、可启动、待复审，低频内容折叠。",
+    "decision": "approved",
+    "reviewer": "user",
+    "review_note": "用户已确认采纳建议并要求执行。",
+    "auto_mode_snapshot": 0,
+    "created_at": "2026-05-10 17:55:02",
+    "reviewed_at": "2026-05-10 17:55:02",
+    "updated_at": "2026-05-10 17:55:02"
+  }
+]

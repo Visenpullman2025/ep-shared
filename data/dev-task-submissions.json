@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "task_id": "T-DASH-001",
+    "assignee_role": "codex",
+    "summary": "完成 dashboard 本地开发控制面：新增 dev_* 数据模型、页面控制面、导出快照、Claude 任务提示生成器和 smoke 验证。",
+    "changed_files": "dashboard/db/schema.sql; dashboard/db/migrate.js; dashboard/db/export.js; dashboard/server.js; dashboard/agents/claude-task.js; dashboard/README.md; package.json; ep-shared/data/dev-*.json; ep-shared/data/SUMMARY.md",
+    "validation_output": "node --check passed; migrate/export passed; /health ok; /data.json includes devStats; /api/claude-task works; Playwright snapshot verified control page.",
+    "risks": "MCP server should not be globally trusted until dependency version is pinned and permissions are reviewed.",
+    "status": "accepted",
+    "submitted_at": "2026-05-10 17:29:41"
+  }
+]

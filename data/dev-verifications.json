@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "task_id": "T-DASH-001",
+    "verifier_role": "codex",
+    "checks_run": "node --check dashboard/server.js; node --check dashboard/db/migrate.js; node --check dashboard/db/export.js; node --check dashboard/agents/claude-task.js; node dashboard/db/migrate.js; node dashboard/db/export.js; curl /health; curl /data.json; curl /api/claude-task/T-MERCHANT-FE-001; Playwright snapshot control page",
+    "result": "pass",
+    "failed_reason": "",
+    "evidence": "dashboard control page rendered with 3 problem clusters, 3 tasks, 3 skill candidates; task prompt endpoint returned strict Claude handoff.",
+    "verified_at": "2026-05-10 17:29:54"
+  }
+]

@@ -1,0 +1,11 @@
+[
+  {
+    "id": "S-20260511-LOCALNOW-DASHBOARD",
+    "title": "LocalNow 开发控制面一次性升级",
+    "source": "codex-chat",
+    "intent": "把自然语言需求沉淀为问题簇、需求、任务、边界、验证和 Git 证据，dashboard 作为本地开发控制台。",
+    "status": "active",
+    "started_at": "2026-05-10 17:24:54",
+    "updated_at": "2026-05-10 17:24:54"
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "PC-MERCHANT-ONBOARDING-001",
+    "title": "商家入驻资料无法稳定支撑接单、推荐和实名审核",
+    "motivation": "商家能否被推荐、能否接单、能否结算，都依赖资料、实名、位置和状态机。若这些职责混在资料页里，订单链路会反复坏。",
+    "root_cause_hypothesis": "资料保存、实名提交、位置采集、履约状态被当成一个表单问题处理，没有独立业务对象、独立校验和独立状态推进。",
+    "repeated_count": 3,
+    "repeated_evidence": "用户多次指出商家资料、实名、位置、状态机失败退回、错误响应不成体系；此前已修 R-034/R-035/R-036/R-037/R-030。",
+    "affected_flows": "商家入驻、推荐排序、候选报价、订单履约、后台审核",
+    "risk_level": "P1",
+    "owner_role": "codex",
+    "status": "open",
+    "created_at": "2026-05-10 17:24:54",
+    "updated_at": "2026-05-10 17:24:54"
+  },
+  {
+    "id": "PC-DASHBOARD-CONTROL-001",
+    "title": "AI 员工协作缺少强约束任务控制面",
+    "motivation": "聊天里的任务容易丢上下文，员工容易只完成字面任务。需要把动机、问题关联、边界、验证、Git 证据落成结构化数据。",
+    "root_cause_hypothesis": "任务分发、规则学习、验收证据和 Git 状态没有统一数据模型，dashboard 只读文档，不能承载执行闭环。",
+    "repeated_count": 2,
+    "repeated_evidence": "用户要求 dashboard 记录每次对话动态，员工从表里领任务并回写提交结果；重复问题要升级成 skill。",
+    "affected_flows": "Codex 总控、Claude 员工执行、dashboard 状态、Git 合并、skill 晋升",
+    "risk_level": "P1",
+    "owner_role": "codex",
+    "status": "in-progress",
+    "created_at": "2026-05-10 17:24:54",
+    "updated_at": "2026-05-10 17:24:54"
+  },
+  {
+    "id": "PC-BACKEND-PERFORMANCE-001",
+    "title": "列表接口和聚合接口存在 N+1 与大页请求风险",
+    "motivation": "商户端 7 秒请求已影响人工测试，列表页和 dashboard 如果逐条聚合，会让 AI 员工在小改动中反复制造性能回退。",
+    "root_cause_hypothesis": "列表接口没有统一 queryCount 边界，前端 dashboard/KPI 请求容易一次拉大页并触发服务端逐行聚合。",
+    "repeated_count": 3,
+    "repeated_evidence": "用户指出商户端请求 7 秒并质疑 N+1；PROJECT_RULES 已加入 Laravel 列表接口批量预取规则。",
+    "affected_flows": "商户候选列表、订单列表、dashboard KPI、用户订单中心",
+    "risk_level": "P1",
+    "owner_role": "backend-claude",
+    "status": "open",
+    "created_at": "2026-05-10 17:24:54",
+    "updated_at": "2026-05-10 17:24:54"
+  }
+]

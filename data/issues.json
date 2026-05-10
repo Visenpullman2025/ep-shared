@@ -5,10 +5,10 @@
     "category": "违规",
     "title": "MerchantPortalController 320行·33个方法",
     "location": "epbkend/app/Http/Controllers/Api/V1/MerchantPortalController.php",
-    "status": "open",
+    "status": "fixed",
     "delete_condition": null,
     "found_at": "2026-05-09 18:44:09",
-    "updated_at": "2026-05-09 18:44:09"
+    "updated_at": "2026-05-09 20:14:01"
   },
   {
     "id": 2,
@@ -16,10 +16,10 @@
     "category": "违规",
     "title": "前端硬编码订单状态判断逻辑",
     "location": "ep/src/lib/orders-permissions.ts:54",
-    "status": "open",
+    "status": "fixed",
     "delete_condition": null,
     "found_at": "2026-05-09 18:44:09",
-    "updated_at": "2026-05-09 18:44:09"
+    "updated_at": "2026-05-09 20:14:01"
   },
   {
     "id": 3,
@@ -49,10 +49,10 @@
     "category": "超限",
     "title": "多个页面严重超行数限制",
     "location": "ep/profile/page.tsx 380行; epmerchant/services/[id]/page.tsx 435行",
-    "status": "open",
+    "status": "fixed",
     "delete_condition": null,
     "found_at": "2026-05-09 18:44:09",
-    "updated_at": "2026-05-09 18:44:09"
+    "updated_at": "2026-05-09 20:14:01"
   },
   {
     "id": 6,
@@ -71,10 +71,10 @@
     "category": "遗留",
     "title": "废弃 quote/ 目录未清理",
     "location": "ep/src/app/[locale]/standard-services/[code]/quote/",
-    "status": "open",
+    "status": "fixed",
     "delete_condition": null,
     "found_at": "2026-05-09 18:44:09",
-    "updated_at": "2026-05-09 18:44:09"
+    "updated_at": "2026-05-09 20:14:01"
   },
   {
     "id": 11,
@@ -82,10 +82,10 @@
     "category": "硬编码",
     "title": "locale 默认值 'zh' 硬编码 8+ 处",
     "location": "epbkend 多个 Controller",
-    "status": "open",
+    "status": "fixed",
     "delete_condition": null,
     "found_at": "2026-05-09 18:44:09",
-    "updated_at": "2026-05-09 18:44:09"
+    "updated_at": "2026-05-09 20:14:01"
   },
   {
     "id": 7,
@@ -93,10 +93,10 @@
     "category": "不一致",
     "title": "API响应格式不统一(list/items/数组)",
     "location": "ep/src/lib/order-center-list.ts",
-    "status": "open",
+    "status": "fixed",
     "delete_condition": null,
     "found_at": "2026-05-09 18:44:09",
-    "updated_at": "2026-05-09 18:44:09"
+    "updated_at": "2026-05-09 20:14:01"
   },
   {
     "id": 8,
@@ -104,10 +104,10 @@
     "category": "字段越界",
     "title": "workflowStatus 出现在钱包字段",
     "location": "ep/src/lib/wallet.ts:111",
-    "status": "open",
+    "status": "fixed",
     "delete_condition": null,
     "found_at": "2026-05-09 18:44:09",
-    "updated_at": "2026-05-09 18:44:09"
+    "updated_at": "2026-05-09 20:14:01"
   },
   {
     "id": 9,
@@ -115,9 +115,9 @@
     "category": "N+1",
     "title": "StandardServiceController 未 eager load",
     "location": "epbkend StandardServiceController::index()",
-    "status": "open",
+    "status": "fixed",
     "delete_condition": null,
     "found_at": "2026-05-09 18:44:09",
-    "updated_at": "2026-05-09 18:44:09"
+    "updated_at": "2026-05-09 20:14:01"
   }
 ]

@@ -1,0 +1,83 @@
+[
+  {
+    "id": 37,
+    "task_id": "T-DASH-001",
+    "guardrail_type": "control-plane-boundary",
+    "rule": "开发控制面只能写 dashboard SQLite 与 ep-shared/data 快照，不写业务库。",
+    "check_method": "检查 changed files 和 SQL schema 路径。",
+    "failure_action": "回退业务库相关改动并记录越界。",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 38,
+    "task_id": "T-DASH-001",
+    "guardrail_type": "skill-promotion",
+    "rule": "重复问题 2 次进入 skill 候选，3 次必须生成或更新 skill/guardrail。",
+    "check_method": "检查 dev_problem_clusters.repeated_count 与 dev_skill_candidates。",
+    "failure_action": "补 skill 候选并阻止任务进入 verified。",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 39,
+    "task_id": "T-DASH-001",
+    "guardrail_type": "evidence",
+    "rule": "没有 diff、验证输出和风险说明的提交不能标 verified。",
+    "check_method": "检查 dev_task_submissions 与 dev_verifications。",
+    "failure_action": "退回任务到 submitted 或 rejected。",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 40,
+    "task_id": "T-MERCHANT-BE-001",
+    "guardrail_type": "api-contract",
+    "rule": "商家域新增或改变 API 必须先有 shared requests/registry。",
+    "check_method": "核对 ep-shared/api/requests.md 和 registry.md。",
+    "failure_action": "停止实现，先补合同。",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 41,
+    "task_id": "T-MERCHANT-BE-001",
+    "guardrail_type": "state-machine",
+    "rule": "商家状态推进只能由后端 service 控制，非法状态必须返回标准业务错误。",
+    "check_method": "API smoke 覆盖非法状态推进。",
+    "failure_action": "退回实现并补状态测试。",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 42,
+    "task_id": "T-MERCHANT-BE-001",
+    "guardrail_type": "n-plus-one",
+    "rule": "列表接口不得逐行查详情，页大小增加时 SQL 次数不得线性增长。",
+    "check_method": "DB::listen/Telescope/等价 queryCount 抽查。",
+    "failure_action": "改为 eager load 或 whereIn 批量预取。",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 43,
+    "task_id": "T-MERCHANT-BE-001",
+    "guardrail_type": "data-quality",
+    "rule": "商家位置不得保存空 lat/lng、0/0 默认坐标或无 source 的坐标。",
+    "check_method": "FormRequest 和 API smoke 覆盖。",
+    "failure_action": "返回 422 标准错误，不写入数据。",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 44,
+    "task_id": "T-MERCHANT-FE-001",
+    "guardrail_type": "frontend-boundary",
+    "rule": "前端不得自造 KYC、距离、推荐分、状态推进和错误码。",
+    "check_method": "rg 状态/错误映射并核对 API 响应。",
+    "failure_action": "移除前端业务判断，改读后端字段。",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 45,
+    "task_id": "T-MERCHANT-FE-001",
+    "guardrail_type": "ui-copy",
+    "rule": "商家可见界面不得展示内部 code、workflow 字段或无意义说明。",
+    "check_method": "移动端 browser smoke 和文案检查。",
+    "failure_action": "改为业务文案或隐藏。",
+    "created_at": "2026-05-10 17:55:02"
+  }
+]

@@ -1,7 +1,7 @@
 # Shared 数据摘要（自动生成，勿手动编辑）
 
 > 由 `node dashboard/db/export.js` 生成
-> 最后更新：2026-05-09
+> 最后更新：2026-05-10
 
 ## 需求池统计
 
@@ -13,25 +13,27 @@
 | rejected | 3 |
 | **总计** | **37** |
 
-## 开放代码问题（8 条）
+## 开放代码问题（0 条）
 
-- [critical] **违规** MerchantPortalController 320行·33个方法  
-  `epbkend/app/Http/Controllers/Api/V1/MerchantPortalController.php`
-- [critical] **违规** 前端硬编码订单状态判断逻辑  
-  `ep/src/lib/orders-permissions.ts:54`
-- [high] **超限** 多个页面严重超行数限制  
-  `ep/profile/page.tsx 380行; epmerchant/services/[id]/page.tsx 435行`
-- [low] **遗留** 废弃 quote/ 目录未清理  
-  `ep/src/app/[locale]/standard-services/[code]/quote/`
-- [low] **硬编码** locale 默认值 'zh' 硬编码 8+ 处  
-  `epbkend 多个 Controller`
-- [medium] **不一致** API响应格式不统一(list/items/数组)  
-  `ep/src/lib/order-center-list.ts`
-- [medium] **字段越界** workflowStatus 出现在钱包字段  
-  `ep/src/lib/wallet.ts:111`
-- [medium] **N+1** StandardServiceController 未 eager load  
-  `epbkend StandardServiceController::index()`
 
-## 开放越界记录（0 条）
 
-无开放越界
+## 开放越界记录（1 条）
+
+- 2026-05-10 `orders-permissions.ts` 硬编码订单状态判断逻辑，违反前端边界
+
+## 开发控制面
+
+- 问题簇：3 个，其中 P1+：3 个
+- 员工任务：3 条，ready/working：2 条
+- Skill 候选：3 条，待晋升：3 条
+- Plan 审核：0 条待审核，自动模式：关
+- 员工运行：0 条，待复审：0 条
+
+### 当前员工任务
+
+- [ready] T-MERCHANT-BE-001 · backend-claude · 后端审计并修正商家资料/实名/位置/状态机/错误响应边界
+- [ready] T-MERCHANT-FE-001 · merchant-claude · 商家端资料页按资料、实名、位置和状态动作分区
+
+### 待审核 Plan
+
+无待审核 Plan

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "DR-20260511-001",
+    "problem_cluster_id": "PC-DASHBOARD-CONTROL-001",
+    "title": "开发 dashboard 支持问题簇、需求、任务、边界、提交、验证和 Git 事件",
+    "user_intent": "我每次和 Codex 对话，dashboard 都应该有动态；员工从表里领任务并提交任务。",
+    "business_reason": "个人开发需要一个可靠控制台来减少上下文丢失和重复犯错。",
+    "engineering_reason": "把自然语言需求转成结构化任务，才能让 Claude 员工小范围、高约束执行。",
+    "current_behavior": "dashboard 主要读取 shared 文档和现有 issue/violation，缺少会话、任务、guardrail、skill 晋升和 Git 证据。",
+    "expected_behavior": "dashboard 展示会话动态、问题簇、需求、任务、guardrail、提交、验证、skill 候选和 Git 事件。",
+    "acceptance_criteria": "运行 migrate/export 后 data.json 返回 dev* 数据；首页显示本地开发控制面；能生成 Claude 任务提示。",
+    "non_goals": "不做多人权限；不接入远程 SaaS；不把开发表放进业务库。",
+    "data_concerns": "开发控制面数据必须留在 dashboard SQLite 和 ep-shared/data 快照，不污染业务 MySQL。",
+    "boundary_concerns": "Claude 不直接跨仓库自由改；没有 allowedPaths/validation/evidence 的任务不可执行。",
+    "priority": "P1",
+    "status": "ready",
+    "created_at": "2026-05-10 17:24:54",
+    "updated_at": "2026-05-10 17:24:54"
+  },
+  {
+    "id": "DR-20260511-002",
+    "problem_cluster_id": "PC-MERCHANT-ONBOARDING-001",
+    "title": "商家资料、实名、位置、状态机和错误响应审计修复任务结构化",
+    "user_intent": "检查商家资料是否支撑业务、实名流程是否合理、位置是否准确、状态机和失败退回是否标准。",
+    "business_reason": "商家画像不可靠会直接影响推荐、接单、履约、结算和平台风控。",
+    "engineering_reason": "资料、实名、位置和状态机必须成为可验证的后端边界，前端只展示和采集输入。",
+    "current_behavior": "该问题曾在聊天和审计中多次出现，但任务动机、重复原因和员工边界没有结构化。",
+    "expected_behavior": "形成问题簇和员工任务，所有相关实现任务自带 API、状态机、数据质量、N+1 和错误响应 guardrail。",
+    "acceptance_criteria": "任务表能明确分配 backend-claude/merchant-claude，且每条任务包含允许路径、禁止路径和验证命令。",
+    "non_goals": "本轮不做 PG/PostGIS，不做 AI 推荐，不重写后台系统。",
+    "data_concerns": "lat/lng 缺失、默认坐标、KYC 状态污染、旧服务配置混入能力配置。",
+    "boundary_concerns": "前端不得决定实名结果、距离、推荐分、状态推进和错误码。",
+    "priority": "P1",
+    "status": "ready",
+    "created_at": "2026-05-10 17:24:54",
+    "updated_at": "2026-05-10 17:24:54"
+  }
+]

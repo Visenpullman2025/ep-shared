@@ -1,0 +1,42 @@
+[
+  {
+    "id": 16,
+    "session_id": "S-20260511-LOCALNOW-DASHBOARD",
+    "event_type": "decision",
+    "title": "计划必须先审核，除非手动开启自动模式",
+    "body": "Codex 生成 plan 后先进入 pending_review；用户在 dashboard 审核后，员工任务才能开始。",
+    "ref_type": "setting",
+    "ref_id": "auto_mode",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 15,
+    "session_id": "S-20260511-LOCALNOW-DASHBOARD",
+    "event_type": "tasking",
+    "title": "一次性生成问题簇、需求和任务",
+    "body": "员工只从任务表领取小范围任务，提交结果必须含 diff、验证和风险。",
+    "ref_type": "task",
+    "ref_id": "T-DASH-001",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 14,
+    "session_id": "S-20260511-LOCALNOW-DASHBOARD",
+    "event_type": "decision",
+    "title": "重复问题必须升级为 skill/guardrail",
+    "body": "问题重复出现 2 次进入候选，3 次必须形成员工执行前规则或脚本检查。",
+    "ref_type": "skill-policy",
+    "ref_id": "SKILL-POLICY-001",
+    "created_at": "2026-05-10 17:55:02"
+  },
+  {
+    "id": 13,
+    "session_id": "S-20260511-LOCALNOW-DASHBOARD",
+    "event_type": "decision",
+    "title": "确认 dashboard 作为本地开发控制面",
+    "body": "dashboard 仅供本人开发使用，不进入业务运行链路。",
+    "ref_type": "session",
+    "ref_id": "S-20260511-LOCALNOW-DASHBOARD",
+    "created_at": "2026-05-10 17:55:02"
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "key": "auto_mode",
+    "value": "0",
+    "label": "自动模式",
+    "description": "关闭时，Codex 的 plan 必须先由用户审核。",
+    "updated_at": "2026-05-10 17:55:02"
+  },
+  {
+    "key": "ui_density",
+    "value": "focus",
+    "label": "界面密度",
+    "description": "focus 表示默认只显示重点，低频信息放入更多。",
+    "updated_at": "2026-05-10 17:55:02"
+  },
+  {
+    "key": "worker_autorun",
+    "value": "0",
+    "label": "员工自动执行",
+    "description": "关闭时，点击开始只锁定任务并记录运行；开启后才调用本机 Claude CLI。",
+    "updated_at": "2026-05-10 17:55:02"
+  }
+]
