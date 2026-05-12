@@ -569,6 +569,73 @@
 
 ---
 
+## POST /api/v1/auth/refresh
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：Supabase refresh token
+- 请求：`refreshToken`
+- 响应：`accessToken`、`refreshToken`、`expiresIn`
+- 实现位置：`App\Http\Controllers\Api\V1\AuthController@refresh`、`SupabaseAuthService`
+- 前端使用位置：用户端会话续期
+- 关联需求：R-20260510-001
+- 合同来源：`api/user-api.md`
+
+---
+
+## GET /api/v1/chat/conversations
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT
+- 请求：query 分页可选
+- 响应：`list[]`，每条含 `conversationId`、`peer`、`lastMessage`、`unreadCount`、`updatedAt`
+- 实现位置：`App\Http\Controllers\Api\V1\ChatController@conversations`
+- 前端使用位置：用户端 Chat 入口
+- 关联需求：R-20260510-002
+- 合同来源：`api/user-api.md`
+
+---
+
+## GET /api/v1/chat/conversations/{conversationId}/messages
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT，会话必须属于当前用户
+- 请求：路径 `conversationId`；query 分页/游标可选
+- 响应：`messages[]` 含 `id`、`senderId`、`content`、`createdAt`、`readAt`
+- 实现位置：`ChatController@messages`
+- 前端使用位置：用户端 Chat 详情
+- 关联需求：R-20260510-002
+
+---
+
+## POST /api/v1/chat/conversations/{conversationId}/messages
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT，会话必须属于当前用户
+- 请求：路径 `conversationId`；body `content`，可选附件字段
+- 响应：新建消息记录
+- 实现位置：`ChatController@sendMessage`
+- 前端使用位置：用户端 Chat 详情发送
+- 关联需求：R-20260510-002
+
+---
+
+## POST /api/v1/chat/conversations/{conversationId}/read
+
+- 状态：implemented
+- 调用方：用户端
+- 权限：用户 JWT，会话必须属于当前用户
+- 请求：路径 `conversationId`
+- 响应：`unreadCount=0` 或最新 `readAt`
+- 实现位置：`ChatController@markRead`
+- 前端使用位置：用户端 Chat 详情进入时
+- 关联需求：R-20260510-002
+
+---
+
 ## 维护
 
 - 新接口上线：在本文件**追加**一条，**状态**从 `implemented` 或 `compatibility` 中选一。  

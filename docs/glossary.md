@@ -1,6 +1,6 @@
 # 术语表（Glossary）
 
-最后更新：2026-04-28
+最后更新：2026-05-13
 
 ## 核心七词（唯一英文命名，正文与需求编号优先使用）
 
@@ -28,6 +28,15 @@
 在描述本平台的「用户买什么、下什么单」时，**不要用**：`product`、`goods`、`item`（作货品）、`listing`、`shop_service`、`service product`。
 
 技术栈固定词可保留，例如 HTTP **GET/POST**、数据类型 **item**（数组项）、`locale` 等。
+
+## Chat / 鉴权扩展词
+
+| 术语 | 含义 | 与代码/表（方向） |
+|------|------|------------------|
+| **Chat** | 用户与商家的点对点 IM 模块。 | `ChatController`、`chat_messages` 表（MySQL）。 |
+| **Conversation** | 单个 Chat 会话，绑定一个订单或商家关系。 | Chat 会话维度的列表与读未读单元。 |
+| **Message** | Chat 单条消息记录，存于 `chat_messages` 表。 | 通过 `GET/POST /api/v1/chat/conversations/{conversationId}/messages` 读写。 |
+| **SupabaseAuth** | 外部认证服务，提供 JWT、OAuth、邮件验证；`yipai_users` 通过 `auth_uid` 字段绑定。 | `SupabaseAuthService`、middleware `supabase.auth*`；R-20260510-001、R-20260513-001。 |
 
 ## 新词准入
 

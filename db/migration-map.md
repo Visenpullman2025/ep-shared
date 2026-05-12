@@ -1,6 +1,6 @@
 # 现表 → 目标语义 映射表（P0.5，无 DDL）
 
-最后更新：2026-04-28
+最后更新：2026-05-13
 
 > **不执行** DDL。  
 > 关于 **`yipai_order_process_data`**：在 `expatth-backend/database/schema/mysql-schema.sql` 当前快照中**未**出现**该表名**。若**其他**环境或历史曾用，**建议**在调研后：  
@@ -46,3 +46,10 @@
 ## 5. 其它
 
 - **`yipai_merchants`**、支付、评价、钱包：不删；**信用** 以 **`merchant_credit_*`** 衔接。
+
+## 6. 已登记迁移
+
+| 迁移文件 | 内容 | 状态 | 关联需求 |
+|----------|------|------|----------|
+| `2026_05_10_100000_add_perf_indexes_orders_and_events.php` | 5 张表的查询索引（`yipai_orders`、`yipai_fulfillment_events`、`yipai_reviews`、`yipai_user_tokens`、`yipai_merchant_tokens`）；使用 `addIndexIfMissing` 保持幂等 | implemented | R-20260510-004 |
+| `2026_05_13_*_add_auth_uid_to_yipai_users.php` | `yipai_users` 增加 `auth_uid` CHAR(36) UNIQUE NULL 列，绑定 Supabase auth.users.id（JWT sub） | accepted（待执行） | R-20260513-001 |

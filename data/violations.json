@@ -22,5 +22,29 @@
     "status": "accepted-temporary",
     "delete_condition": "支付网关接入后改为后端下发",
     "updated_at": "2026-05-10 18:10:49"
+  },
+  {
+    "id": "V-20260513-001",
+    "date": "2026-05-13",
+    "source": "shared 审计",
+    "location": "epbkend/expatth-backend, ep/src/lib/supabase",
+    "behavior": "Supabase Auth / Chat 模块 / Supabase Storage 旁路 / 性能索引迁移这 4 项改造在 shared 合同登记前已在 epbkend 与 ep 落代码，违反 CONSTITUTION §2 跨仓库顺序和 §3 前端 API 闸门",
+    "risk": "跨仓 AI 协作时下游 AI 无法从 shared 看到这些接口的存在",
+    "action": "反向补登 R-20260510-001/002/003/004 与 R-20260513-001（本批已补登）；后续新功能严格按 §2 顺序",
+    "status": "accepted-temporary",
+    "delete_condition": "上述 R- 全部 status=implemented 且未来变更按 §2 跨仓库顺序执行",
+    "updated_at": "2026-05-13"
+  },
+  {
+    "id": "V-20260513-002",
+    "date": "2026-05-13",
+    "source": "shared 审计",
+    "location": "多文件（13 Next page、4 React 组件、8 Laravel controller、9 Laravel service；新增 ChatController.php 319 行也在内）",
+    "behavior": "34 个文件超 CONSTITUTION §7 行数门禁；最大 684 行 OrderFlowService.php",
+    "risk": "文件臃肿降低可读性；继续在超限文件叠加会加剧",
+    "action": "登记历史欠债，后续重构时按门禁拆分；新增文件严格控制行数",
+    "status": "accepted-temporary",
+    "delete_condition": "所有超限文件拆分到上限内",
+    "updated_at": "2026-05-13"
   }
 ]

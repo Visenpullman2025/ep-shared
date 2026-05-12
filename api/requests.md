@@ -43,7 +43,8 @@
 - 响应字段草案：`hasMyReply`（boolean）、`overtimeNoComment`（或 snake_case 兼容）。
 - 失败场景：401 未登录；404 非本人单。
 - 影响页面：用户端订单中心、订单详情。
-- 状态：implemented（以现网为准；若缺字段则回开子条）
+- 状态：implemented
+- 备注：以现网为准；若缺字段则回开子条
 - 关联合同：user-api（订单节）
 - 关联代码：`MeCenterController`、订单序列化
 
@@ -347,7 +348,8 @@
 - 响应字段草案：订单扩展块中可含 `matching.factors[]`、`matching.generatedAt`、`candidates[].matchScore`、`candidates[].distanceKm`、`candidates[].responseScore`、`candidates[].availabilityStatus`。
 - 失败场景：无可用商家、档期冲突、能力禁用、服务区域不覆盖。
 - 影响页面：用户订单详情、商家 order-requests、运营审计。
-- 状态：implemented（P2：后端候选匹配、用户/商家展示切片已接；真实 DB E2E 仍需执行）
+- 状态：implemented
+- 备注：P2 后端候选匹配、用户/商家展示切片已接；真实 DB E2E 仍需执行
 - 关联合同：`docs/fulfillment-flow.md`、`docs/state-machine.md`、`api/user-api.md`、`api/merchant-api.md`
 - 关联代码：`MerchantMatchingService`、`OrderFlowService`、`OrderMainChainPresenter`、`MerchantOrderRequestService`、`ep` 订单展示、`epmerchant` 待办卡片
 
@@ -362,7 +364,8 @@
 - 响应字段草案：与请求对称；候选和订单详情只暴露摘要，不暴露商家内部排班全部细节。
 - 失败场景：422 日期/时区非法、容量规则非法、能力已禁用、审核态不允许修改。
 - 影响页面：商家能力配置、商家日历、用户匹配。
-- 状态：implemented（P2：能力与 availability 字段已接；真实 DB E2E 仍需执行）
+- 状态：implemented
+- 备注：P2 能力与 availability 字段已接；真实 DB E2E 仍需执行
 - 关联合同：merchant-api §2–3，R-016
 - 关联代码：`MerchantCapabilityService`、`MerchantOrderService@getAvailability/updateAvailability`、`YipaiMerchantCapability`、`YipaiMerchant`、`epmerchant` 能力表单
 
@@ -377,7 +380,8 @@
 - 响应字段草案：RequirementTemplate 返回可渲染字段；QuotePreview 返回分项计价和策略 code 摘要。
 - 失败场景：模板版本不存在、策略 code 未注册、payload 与模板不匹配。
 - 影响页面：标准服务报价页、创建订单、商家能力规则。
-- 状态：implemented（P2：两个样板模板与 pricing override 已接；完整 WorkflowDefinition 独立表仍可后续增强）
+- 状态：implemented
+- 备注：P2 两个样板模板与 pricing override 已接；完整 WorkflowDefinition 独立表仍可后续增强
 - 关联合同：user-api §2–4、merchant-api §2
 - 关联代码：`StandardServiceP1aSeeder`、`StandardServicePreviewService`、`ServiceProcessPricingService`
 
@@ -392,7 +396,8 @@
 - 响应字段草案：`holdStatus`、`platformFeePercent`、`platformFee`、`taxFee`、`merchantSettlement`、`userPayable`、`paymentStatus`。
 - 失败场景：订单态不允许付款、金额过期、MQC 未接受、重复冻结、余额不足。
 - 影响页面：用户支付、订单详情、商家钱包、结算记录。
-- 状态：implemented（P2：payment intent 与 wallet pay 返回冻结/平台收益摘要；真实渠道预授权仍按支付渠道后续增强）
+- 状态：implemented
+- 备注：P2 payment intent 与 wallet pay 返回冻结/平台收益摘要；真实渠道预授权仍按支付渠道后续增强
 - 关联合同：user-api §6、state-machine §5
 - 关联代码：`PaymentController@intent`、`PaymentSettlementService`、`OrderPricing`、`OrderP1Service`、`OrderMainChainPresenter`、`ep` 支付弹层
 
@@ -407,7 +412,8 @@
 - 响应字段草案：订单当前 `workflowStatus`、`fulfillmentEvents[]` 摘要、`creditImpact` 摘要。
 - 失败场景：状态不允许、未支付不可开始、重复完成、售后锁定、非订单商家或非本人操作。
 - 影响页面：商家订单、用户订单、信用档案、售后。
-- 状态：implemented（P3：履约事件与商家信用事件已接；用户信用事件可后续独立扩展）
+- 状态：implemented
+- 备注：P3 履约事件与商家信用事件已接；用户信用事件可后续独立扩展
 - 关联合同：state-machine §5.1–5.2、merchant-api §6、user-api §7–8
 - 关联代码：`FulfillmentEventService`、`YipaiFulfillmentEvent`、`OrderWorkflowService`、`MerchantOrderService`、`OrderP1Service`、`OrderMainChainPresenter`
 
@@ -422,7 +428,8 @@
 - 响应字段草案：`reviewId`、`squarePostId`、`squarePublishStatus`。
 - 失败场景：订单未完成、重复评价、非本人/非本商家、隐私字段命中拒绝发布。
 - 影响页面：用户评价页、商家订单详情、广场。
-- 状态：implemented（P3：用户评价广场分发和商家评价客户已接；脱敏策略为当前最小实现）
+- 状态：implemented
+- 备注：P3 用户评价广场分发和商家评价客户已接；脱敏策略为当前最小实现
 - 关联合同：user-api §9、merchant-api R-004、registry 现有 square/reviews
 - 关联代码：`ReviewService`、`MerchantPortalController@createReview`、`POST /api/v1/reviews`、`POST /api/v1/merchant/reviews`、`ep` 评价请求、`epmerchant` 商家订单页
 
@@ -437,7 +444,8 @@
 - 响应字段草案：订单对象稳定包含 `standardServiceCode`、`serviceTitle`（按 locale 或后端默认 locale 解析）、可选 `standardService` 摘要；legacy `serviceType` / 类目 code 只能作为调试或兼容字段，不作为用户展示名。
 - 失败场景：订单关联不到 StandardService 时，后端返回可解释的兼容展示名与 `legacyServiceCode`，同时记录数据修复需求；不得把内部 code 原样交给客户端当文案。
 - 影响页面：用户订单中心、订单详情、支付弹层、评价页、商家订单待办。
-- 状态：implemented（后端 `OrderMainChainPresenter` 稳定返回 `serviceTitle` / `serviceTitleI18n` / `standardService`；用户端已删除本地 code-to-label map）
+- 状态：implemented
+- 备注：后端 `OrderMainChainPresenter` 稳定返回 `serviceTitle` / `serviceTitleI18n` / `standardService`；用户端已删除本地 code-to-label map
 - 关联合同：`docs/boundaries.md` §6、`api/user-api.md` §0
 - 关联代码：`OrderMainChainPresenter`、`StandardServiceOrderPayloadResolver`、`ep/src/lib/orders-pickers.ts`
 
@@ -456,7 +464,8 @@
 - 响应字段草案：`syncRunId`、`scope`、`status`、`startedAt`、`finishedAt`、`sourceUpdatedSince`、`upsertedCount`、`failedCount`、`errorSummary`。
 - 失败场景：PostgreSQL 连接不可用、embedding provider 不可用、MySQL 源数据缺少 lat/lng、同步任务重复运行、Dcat 操作员权限不足。
 - 影响页面：Dcat 能力库同步页或按钮、运营推荐审计、未来搜索/推荐 API。
-- 状态：rejected（当前阶段暂停；重新启用时另开新 R）
+- 状态：rejected
+- 备注：当前阶段暂停；重新启用时另开新 R
 - 关联合同：`db/postgres-clean-rewrite.md`、`db/schema-plan.md`
 - 关联代码：待实现；建议后端新增 Artisan command / queued job / Dcat RowAction 或页面工具按钮。
 
@@ -471,7 +480,8 @@
 - 响应字段草案：同步日志记录同 R-027。
 - 失败场景：上一轮未完成、锁超时、部分 scope 失败、PostgreSQL 写入冲突、embedding 生成限流。
 - 影响页面：Dcat 同步状态、运维日志、推荐/搜索能力。
-- 状态：rejected（当前阶段暂停；重新启用时另开新 R）
+- 状态：rejected
+- 备注：当前阶段暂停；重新启用时另开新 R
 - 关联合同：`db/postgres-clean-rewrite.md`
 - 关联代码：待实现；建议 `app/Console/Kernel.php` 或 Laravel 11 schedule bootstrap、`CapabilityReadModelSyncService`。
 
@@ -486,7 +496,8 @@
 - 响应字段草案：搜索结果需返回 `standardServiceCode`、`merchantId`、`score`、`reason`、`matchedTextSummary`，不得暴露 embedding 原始向量。
 - 失败场景：embedding 缺失、语言不支持、向量服务限流、PostgreSQL pgvector 扩展不可用。
 - 影响页面：首页搜索、标准服务发现、推荐候选解释、运营调试。
-- 状态：rejected（当前阶段暂停；重新启用时另开新 R）
+- 状态：rejected
+- 备注：当前阶段暂停；重新启用时另开新 R
 - 关联合同：`db/postgres-clean-rewrite.md`、`db/schema-plan.md`
 - 关联代码：待实现；建议 `search_embeddings`、embedding provider adapter、PostgreSQL pgvector 查询服务。
 
@@ -620,6 +631,59 @@
 - 状态：implemented
 - 关联合同：`api/merchant-api.md`、`PROJECT_RULES.md` 第 2 节
 - 关联代码：`ApiProblem`、`bootstrap/app.php`、`MerchantPortalController`、`MerchantOrderActionRequest`、`MerchantOrderFailureActionRequest`、`UpdateMerchantAvailabilityRequest`、`UpdateMerchantLocaleRequest`
+
+---
+
+## R-20260510-001 Supabase Auth 接入与 token_hash 双轨过渡
+
+- 来源角色：Backend API
+- 背景：自建 token_hash 鉴权运维成本高，缺 OAuth 与邮箱验证；引入 Supabase Auth 提供 JWT、Google/Line OAuth、邮件验证码、refresh token；与现有 yipai_user_tokens / yipai_merchant_tokens 双轨并存直到全量迁移。
+- 需要的接口：`POST /api/v1/auth/refresh`；新 middleware `supabase.auth`、`supabase.auth.optional`、`supabase.merchant.auth`。
+- 影响代码：`app/Http/Middleware/AuthenticateSupabaseJwt.php`、`AuthenticateSupabaseMerchantJwt.php`、`ResolveOptionalSupabaseUser.php`；`app/Services/Common/SupabaseAuthService.php`；`bootstrap/app.php`；`routes/api.php`。
+- 状态：implemented
+- 备注：双轨期 yipai_user_tokens 保留；首次 JWT 登录由 SupabaseAuthService 同步建 yipai_users 行；需要 auth_uid 列见 R-20260513-001。
+
+---
+
+## R-20260510-002 Chat 模块端点接入
+
+- 来源角色：Backend API / 用户端
+- 背景：用户与商家点对点沟通需要 IM；MVP 用 Laravel 直写 chat_messages 表。
+- 需要的接口：`GET /api/v1/chat/conversations`；`GET /api/v1/chat/conversations/{conversationId}/messages`；`POST /api/v1/chat/conversations/{conversationId}/messages`；`POST /api/v1/chat/conversations/{conversationId}/read`。
+- 影响代码：`app/Http/Controllers/Api/V1/ChatController.php`。
+- 状态：implemented
+- 备注：chat_messages 表在 MySQL；ChatController 319 行已超 CONSTITUTION §7 上限 120（见 V-20260513-002）；未来若用 Supabase Realtime 需 Postgres 双写或换 Pusher。
+
+---
+
+## R-20260510-003 Supabase Storage 签名上传旁路
+
+- 来源角色：Backend API
+- 背景：评估用 Supabase Storage 替代/补充 OSS；已加 `uploads/url` 端点和 `SupabaseStorageService.php`。
+- 需要的接口：`POST /api/v1/uploads/url`（signed URL）；保留 `GET /api/v1/uploads/oss-policy` 作 legacy。
+- 影响代码：`app/Http/Controllers/Api/V1/UploadController.php`；`app/Services/Common/SupabaseStorageService.php`。
+- 状态：draft
+- 备注：2026-05-13 架构评估暂不推进，OSS 继续为主存储；本条记录现状以备后用。
+
+---
+
+## R-20260510-004 orders 列表 N+1 性能索引迁移
+
+- 来源角色：Backend API
+- 背景：orders 列表 7s 卡顿，定位为 yipai_orders / yipai_fulfillment_events / yipai_reviews / yipai_user_tokens / yipai_merchant_tokens 缺索引。
+- 影响代码：`database/migrations/2026_05_10_100000_add_perf_indexes_orders_and_events.php`。
+- 状态：implemented
+- 备注：迁移幂等（addIndexIfMissing）；同步登记到 db/migration-map.md。
+
+---
+
+## R-20260513-001 yipai_users 加 auth_uid 字段绑定 Supabase
+
+- 来源角色：Backend API
+- 背景：R-20260510-001 落地的二阶段；为 JWT sub（Supabase auth.users.id UUID）提供本地索引。
+- 影响代码：`database/migrations/2026_05_13_*_add_auth_uid_to_yipai_users.php`。
+- 状态：accepted
+- 备注：CHAR(36) UNIQUE NULL；首次登录由 SupabaseAuthService 写入。
 
 ---
 
