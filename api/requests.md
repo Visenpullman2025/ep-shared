@@ -682,8 +682,24 @@
 - 来源角色：Backend API
 - 背景：R-20260510-001 落地的二阶段；为 JWT sub（Supabase auth.users.id UUID）提供本地索引。
 - 影响代码：`database/migrations/2026_05_13_*_add_auth_uid_to_yipai_users.php`。
-- 状态：accepted
-- 备注：CHAR(36) UNIQUE NULL；首次登录由 SupabaseAuthService 写入。
+- 状态：implemented
+- 备注：CHAR(36) UNIQUE NULL；首次登录由 SupabaseAuthService 写入；本地 MySQL 已验证迁移可单独应用并产生正确列结构与唯一索引。
+
+## R-20260513-002 yipai_reviews 老迁移幂等化
+
+- 来源角色：Backend API
+- 背景：`2026_03_29_140000_yipai_reviews_parent_id_and_drop_followups.php` 在新建本地开发库时崩溃——`schema/mysql-schema.sql` dump 表上没有 `yipai_reviews_order_id_unique` 索引，老迁移直接 `dropUnique` 报 1091。生产已运行成功，不受影响。
+- 影响代码：`database/migrations/2026_03_29_140000_yipai_reviews_parent_id_and_drop_followups.php`。
+- 状态：implemented
+- 备注：所有 `dropForeign` / `dropUnique` / `dropColumn` / `foreign` / `index` 操作前加 `mysqlForeignKeyExists` / `mysqlIndexExists` / `Schema::hasColumn` 检查；与 pgsql 分支 `DROP CONSTRAINT IF EXISTS` 风格保持一致。
+
+## R-20260513-003 本地开发种子数据
+
+- 来源角色：Backend API
+- 背景：本地开发 MySQL 库迁移完成后需要最小可用账号才能跑通登录 / 浏览 / 下单链路。
+- 影响代码：`database/seeders/LocalDevSeeder.php`。
+- 状态：implemented
+- 备注：产出 2 客户 (`customer1@test.com` / `customer2@test.com`) + 1 商家 (`merchant1@test.com`) + 1 商家档案 + 2 默认地址；密码统一 `test1234`；`APP_ENV=production` 时拒绝执行；用 `updateOrInsert` 幂等，多次运行不重复。
 
 ---
 
