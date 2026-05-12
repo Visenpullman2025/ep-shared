@@ -6,8 +6,8 @@ alwaysApply: true
 
 # shared 入口规则
 
-每次任务必须先读：`../../PROJECT_RULES.md`。
+每次任务必须先读 `../../CHARTER.md` 与 `../../MANIFEST.md`。
 
 `ep-shared` 只负责合同、术语、状态、数据库计划、规则和审计记录，不放运行时代码。
 
-文档职责、格式、越界审计和触发阅读方式以 `../../PROJECT_RULES.md` 为准。
+规则正文以 `../../CONSTITUTION.md` 为准。
