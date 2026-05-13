@@ -46,5 +46,17 @@
     "status": "accepted-temporary",
     "delete_condition": "所有超限文件拆分到上限内",
     "updated_at": "2026-05-13"
+  },
+  {
+    "id": "V-20260513-003",
+    "date": "2026-05-13",
+    "source": "shared 审计",
+    "location": "epbkend/.../app/Http/Middleware/*Supabase*.php, AuthService.php, ChatController.php",
+    "behavior": "同一字段在 yipai_users / yipai_merchant_accounts 上有两个名字混用——migration 加的是 auth_uid，middleware/service/controller 5 个文件查的是 supabase_uid，导致 OAuth 路径必挂",
+    "risk": "命名漂移会让下游 AI 和新开发者每次都踩坑；混用导致 SQL 报错或静默查不到",
+    "action": "统一为 auth_uid（项目对外抽象的\"第三方身份\"概念，不绑定供应商）；5 个文件改齐 + Model fillable 补；新 migration 给 yipai_merchant_accounts 加列；写 R-20260513-008/-009 登记",
+    "status": "fixed",
+    "delete_condition": "",
+    "updated_at": "2026-05-13"
   }
 ]

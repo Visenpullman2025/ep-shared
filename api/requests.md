@@ -701,6 +701,376 @@
 - 状态：implemented
 - 备注：产出 2 客户 (`customer1@test.com` / `customer2@test.com`) + 1 商家 (`merchant1@test.com`) + 1 商家档案 + 2 默认地址；密码统一 `test1234`；`APP_ENV=production` 时拒绝执行；用 `updateOrInsert` 幂等，多次运行不重复。
 
+## R-20260513-004 Tier 1 v1.0 房屋测量
+
+- 来源角色：产品 / Backend API
+- 背景：v1 标准化首件，flat base + 距离 + 节假日（引用 R-20260513-013 通用定价基础）；用来打通"下单→派单→履约→评价"完整链路最小集。
+- 需要的接口：基础下单流程已存在；form_schema 与 base_price 待定。
+- 影响代码：`yipai_requirement_templates`（替换占位 schema）、`yipai_standard_services`（更新 std_house-measurement 详情）、`yipai_pricing_rules`（base + 引用通用配置）、CS 派单台。
+- 状态：accepted
+- 备注：用户填面积粒度（套内/建筑/含阳台）+ 联系地址（含 lat/lng）。base_price 固定；distance/holiday/tip 按 R-013 通用规则。无现场二次报价。
+
+## R-20260513-005 Tier 1 v1.1 空调清洁（按台计费）
+
+- 来源角色：产品 / Backend API
+- 背景：v1.1 引入"按件 + 系数"报价模型；用户填台数 + 类型（壁挂/吊顶/中央）+ 楼层（影响高空作业）。
+- 影响代码：std_ac-clean-refill 详情、`yipai_pricing_rules` per-item 模式 + 系数表入 DB、距离/节假日/打赏走 R-20260513-013 通用基础。
+- 状态：accepted
+- 备注：每台基础价 ×（楼层系数 × 类型系数），多台折扣阶梯；最终 + distance + holiday + tip 走通用规则。
+
+## R-20260513-006 Tier 1 v1.2 上门检修-电器（两段式定价）
+
+- 来源角色：产品 / Backend API
+- 背景：v1.2 关键模板——上门费（flat base + 距离 + 节假日） + 现场技师二次报价 + 用户通过平台担保确认后续服务费。跑通后复用给 杀虫 / 除草 / 泳池清洁 / 宠物 / 地毯/窗帘/沙发 等 6 类。
+- 影响代码：新订单状态 `pending_onsite_quote`、`waiting_user_accept_onsite_quote`；MQC 流程扩展；担保下单（escrow）支付路径；`yipai_pricing_rules` 标记 mode=visit_fee_plus_onsite。
+- 状态：accepted
+- 备注：阶段一上门费走 R-20260513-013 通用规则即时支付；阶段二现场服务费走 MQC + 用户确认 + 担保支付 + tip。v1 不做误差兜底。
+
+## R-20260514-001 标准服务 4 开关 + 后台「标准服务」菜单
+
+- 来源角色：产品 / Backend API
+- 背景：tier 1 服务需要在表上声明三件事：是否需要客服派单、是否参与距离收费、是否参与节假日附加、是否启用打赏。后台 Dcat 加 grid 一目了然 + inline switch 编辑。
+- 影响代码：
+  - `database/migrations/2026_05_14_010000_add_dispatch_pricing_flags_to_standard_services.php`（4 个 boolean 列）
+  - `app/Admin/Controllers/StandardServiceController.php`（grid + form + show）
+  - `app/Admin/routes.php` 加 `ops-standard-services` 资源
+  - `admin_menu` 行：服务运营 → 标准服务
+- 状态：implemented
+- 备注：现有 8 个 standard_services（房屋测量/杀虫除草/草坪/宠物喂养/宠物托管/地毯沙发清洁/空调清洁/管道除虫）已批量开启 4 开关。其余分类（泳池清洁、上门检修-水/电/电器、宠物美容、窗帘清洁）需用户在后台 form 手动新建标准服务条目。
+
+## R-20260514-002 收费标准 — 合并到系统设置（不拆专表）
+
+- 来源角色：产品 / Backend API
+- 背景：R-20260513-013 原计划拆 3 张表，根据产品反馈改为合并到 `yipai_system_settings` 的 3 条 JSON setting（业务上量再拆）。
+- 影响代码：
+  - `database/migrations/2026_05_14_010100_seed_pricing_system_settings.php`（写 3 条 setting）
+  - `app/Admin/Controllers/PricingSettingController.php`（scope 到 setting_key LIKE 'pricing.%' 的友好视图，textarea 直接编辑 JSON）
+  - `app/Admin/routes.php` 加 `settings-pricing` 资源
+  - `admin_menu` 行：系统设置 → 收费标准
+- 状态：implemented
+- 备注：3 条 setting_key — `pricing.distance_tiers`（3 阶梯：0-10/10-20/20+）、`pricing.holiday_surcharges`（3 项：泼水节/每周日/元旦）、`pricing.tip_presets`（[10,20,50,100]）。后台 textarea 编辑保存时自动 JSON 解析。
+
+## R-20260514-004 服务目录收口到 tier 1（7 类 13 服务）
+
+- 来源角色：产品
+- 背景：原有 33 categories + 37 standard_services 大量重复（aircon_cleaning / home_cleaning 各 3 条）且超出 v1 范围。按用户确认的 7 类做收口，其余 is_active=0 软删可回滚。
+- 影响代码：`database/migrations/2026_05_14_030000_consolidate_service_catalog_to_tier1.php`。
+- 状态：implemented
+- 备注：
+  - 保留 categories：house-measurement / home-repair / pest-control / lawn-care / pool-cleaning / pet-service / cleaning-service
+  - 保留 standard_services 13 个（房屋测量 / 上门检修 3 个 / 杀虫 / 除草 / 泳池 / 宠物 2 个 / 清洁 4 个）
+  - 软删 32 categories + 35 standard_services
+  - 顺带修复 admin_menu 10556/10557/10558 三条乱码（docker exec UTF-8 双重编码 → 用 Eloquent 重写）
+
+## R-20260514-007 占位封面图 + 服务/分类 API 视觉规范
+
+- 来源角色：产品 / 前端
+- 背景：审计前端调 `/api/v1/categories` 与 `/api/v1/standard-services`，imageUrl 字段大量为 `placeholder.png` 字面字符串或 null，前端展示无封面。
+- 影响代码：`database/migrations/2026_05_14_060000_seed_placeholder_images.php`。
+- 状态：implemented
+- 备注：用 placehold.co 在线占位（外网可访问，SVG 格式），按 7 类各自分色（暖黄/蓝/红/绿/天蓝/橙/紫），13 服务继承所在分类色 + 英文文本。生产前后台「标准服务/服务分类」上传真图覆盖。
+
+## R-20260514-008 v1 下单链路整改（base_price 接入 + 测试商家 capability）
+
+- 来源角色：Backend API
+- 背景：审计发现两个断点 — quote-preview 报价恒为 0；dispatch 找不到候选商家。
+- 影响代码：
+  - `app/Services/Common/ServiceProcessPricingService.php`：`preview()` 加 `?float $baseFee = null` 参数；fallback 路径用 baseFee 填充 base_fee atom。
+  - `app/Services/Common/StandardServicePreviewService.php`：调用 pricing 时传 `$standardService->base_price`。
+  - `database/migrations/2026_05_14_090000_seed_merchant_capabilities_for_test_merchant.php`：给 merchant1@test.com 添加 13 个 standard_services 全部 capabilities（service_area=Bangkok, radius=15km, status=active, review_state=approved）。
+- 状态：implemented
+- 备注：
+  - 验证 tinker：preview(template=null, base_price=500/1500) → amount 正确返回 500/1500；base_price=null 回退 0 保留兼容
+  - 验证派单：OrderFlowService.bestMerchantCapabilityByStandardServiceCode('std_house-measurement') 能找到 merchant1
+  - 未做：distance/holiday/tip 在 quote-preview 阶段的应用（merchant 未知导致距离无法准确算；推迟到 MQC 阶段商家确认时计算）
+
+## R-20260514-009 一套场景匹配的真实摄影封面图
+
+- 来源角色：产品 / 前端
+- 背景：原占位图 (placehold.co SVG) 不够"产品感"；用户要求场景匹配 + 风格一致的真实摄影封面。
+- 影响代码：`database/migrations/2026_05_14_080000_seed_curated_service_images.php`（agent 起草）。
+- 状态：implemented
+- 备注：
+  - 图源 Unsplash 免费可商用，参数统一 `?w=800&q=80&auto=format&fit=crop`
+  - 色调偏暖（木色/米色/淡黄/绿/浅蓝），构图中近景，避开冷工业感
+  - 7 categories + 13 standard_services 共 20 张全部 HTTP 200 验证
+  - 妥协：std_curtain-cleaning 用纯窗帘室内场景（清洁动作类多为 Unsplash+ premium）；宠物类用居家温馨而非"师傅+宠物"组合
+  - 后台「标准服务」/「服务分类」上传真图后可覆盖
+
+## R-20260514-006 后台「服务运营」菜单收口（去歧义）
+
+- 来源角色：产品 / 运营
+- 背景：后台「服务运营」原来 5 个菜单，但其中"服务管理"（yipai_services 商家私有 SKU，0 条数据）和"计费方式模板"（yipai_service_process_templates 4 条 P0.5 老种子，0 处引用且名字误导——表是"流程表单 schema"不是计费）实际上无用，挤占视觉位置。
+- 影响代码：`database/migrations/2026_05_14_050000_clean_unused_service_menus.php`。
+- 状态：implemented
+- 备注：
+  - 隐藏 2 个菜单：`ops-services`、`ops-service-process-templates`（admin_menu.show=0，可回滚）
+  - 软删 4 条 yipai_service_process_templates（status=inactive）
+  - 保留 3 个：服务分类 / 标准服务 / 服务流程图
+  - 表全部保留，未来需要时把 show=1 即可恢复菜单
+
+## R-20260514-005 standard_services 加 base_price + 后台编辑
+
+- 来源角色：产品 / Backend API
+- 背景：每个标准服务需要一个基础价（计费方式模板的核心）。报价 = base_price + 距离 + 节假日 + 打赏。上门检修类的 base_price 即上门费。
+- 影响代码：
+  - `database/migrations/2026_05_14_040000_add_base_price_to_standard_services.php`（DECIMAL(10,2) + 13 个种子默认价）
+  - `app/Admin/Controllers/StandardServiceController.php`（grid 显示 `฿ XXX.XX` + inline editable + form decimal 字段）
+- 状态：implemented
+- 备注：种子价（baht，可后台调）— 房屋测量 500 / 上门检修 300 / 杀虫 800 / 除草 600 / 泳池 1500 / 宠物托管 200 / 宠物美容 600 / 地毯 800 / 空调 700 / 窗帘 500 / 沙发 600。
+
+## R-20260514-003 服务流程图文展示（v1.0 房屋测量模板）
+
+- 来源角色：产品 / 运营
+- 背景：用户要求"落地最简单的服务流程，图文形式展示在后台"。以"房屋测量"为最简模板，10 步流程 + 状态机 + 后台配置入口三块图文展示。
+- 影响代码：
+  - `app/Admin/Controllers/WorkflowDiagramController.php`（静态 HTML 渲染，不依赖 Model）
+  - `app/Admin/routes.php` 加 `ops-workflow-diagram` GET 路由
+  - `admin_menu` 行：服务运营 → 服务流程图
+- 状态：implemented
+- 备注：10 步流程图含 emoji 图标 + 描述；状态机展示 `pending_cs_assign` 在 v1 的位置；底部列出 4 个相关后台配置链接（标准服务/收费标准/服务分类/流程模板）。新增 tier 1 服务时复制本模板。
+
+## R-20260514-010 BFF 列表响应形状兼容（`data.list` ↔ `data:[]`）
+
+- 来源角色：用户端
+- 背景：后端把 list 返回包成 `{data:{list:[...]}}`，但前端 BFF 假设 `data: []` 是数组，`Array.isArray` 判失败直接 `ok([])`。`/zh/categories` 整页空白。
+- 影响代码：`ep/src/app/api/categories/route.ts`、`ep/src/app/api/standard-services/route.ts`
+- 状态：implemented
+- 备注：两个 BFF 都改成 `rows = Array.isArray(raw) ? raw : Array.isArray(raw?.list) ? raw.list : []` 双形态兼容。
+
+## R-20260514-011 BFF imageUrl 后端优先 + 本地映射 fallback
+
+- 来源角色：用户端
+- 背景：BFF 无条件 `localImageForCategory(id)` / `localImageForStandardService(row)` 覆盖后端的 `imageUrl`，对没本地映射的新 code 全部 fallback 成灰图。
+- 影响代码：`ep/src/app/api/categories/route.ts`、`ep/src/app/api/standard-services/route.ts`、`ep/src/app/api/standard-services/[code]/route.ts`
+- 状态：implemented
+- 备注：改成 `upstreamImage || localFallback`，后端有真 URL 就用真 URL，没有再走本地 PNG / 占位图。
+
+## R-20260514-012 服务图标统一风格 — Fluent Emoji Flat SVG
+
+- 来源角色：产品
+- 背景：R-20260514-009 的 Unsplash 摄影封面风格不统一、辨识度差。用户要求"看图一眼就知道这是什么服务"。
+- 影响代码：
+  - `database/migrations/2026_05_14_110000_reseed_fluent_emoji_service_images.php`（7 分类 + 13 服务 `image_url` 替换）
+  - `ep/next.config.ts` `remotePatterns` 加 `api.iconify.design`
+- 状态：implemented
+- 备注：URL 模板 `https://api.iconify.design/fluent-emoji-flat/{slug}.svg`。覆盖 R-009 状态保留为 implemented（历史 seed 仍可回滚到 placehold.co）。
+
+## R-20260514-013 13 个标准服务最简 requirement_template 补齐
+
+- 来源角色：用户端
+- 背景：tier 1 收口后只有 `std_pet-boarding` / `std_house-measurement` 有 published template，剩余 11 个调 `/requirement-template` 一律 404。
+- 影响代码：`database/migrations/2026_05_14_100000_seed_minimal_requirement_templates.php`
+- 状态：implemented
+- 备注：与现有最简模板对齐 `{"fields":[],"version":1}`；后台后续可按服务类型完善字段。配合 R-014 / R-016 让 v1 报价链路在无字段服务上跑通。
+
+## R-20260514-014 standard-service 详情页返回 bug 修复
+
+- 来源角色：用户端
+- 背景：`/zh/standard-services/{code}` 顶栏 `backHref` 硬编码到 `/zh/standard-services` 全列表，用户从 `/zh/categories/{slug}` 进入再返回时跳走"上级内容就没了"。
+- 影响代码：`ep/src/app/[locale]/standard-services/[code]/page.tsx`
+- 状态：implemented
+- 备注：删 `backHref` prop，`SecondaryTopBar` 自动 fallback `router.back()` 走浏览器历史。
+
+## R-20260514-015 服务地址默认填首页保存位置
+
+- 来源角色：用户端
+- 背景：报价表单进入时 `serviceAddress` 空白，但用户已在首页定位过；不该让用户再输一次。
+- 影响代码：`ep/src/components/standard-services/StandardServiceInlineQuote.tsx`
+- 状态：implemented
+- 备注：sessionStorage draft 为空时回退 `readSavedLocation().label`；与 R-028 一起把 lat/lng 一并送给后端。
+
+## R-20260514-016 空 requirementPayload 端到端放行
+
+- 来源角色：用户端 / Backend API
+- 背景：tier 1 服务 `form_schema = {"fields":[],"version":1}` 是合法的（只看 base_price），但前后端原本都拦截空 payload → "请填写必填项" 假阳性。
+- 影响代码：
+  - `ep/src/components/standard-services/StandardServiceInlineQuote.tsx`（前端仅当 `visibleFields.length > 0` 时拦截）
+  - `app/Services/Common/StandardServicePreviewService.php`（后端只校验 `is_array`，去掉 `=== []` 拒绝）
+- 状态：implemented
+- 备注：std_pest-control 实测返回 base_price 800 THB，breakdown 仅含 "基础价"。
+
+## R-20260514-017 /zh/categories 和 /[slug] 页面重新设计
+
+- 来源角色：用户端 / 产品
+- 背景：用户要求两个页面跟随首页 BannerSlide 风格。
+- 影响代码：`ep/src/app/[locale]/categories/page.tsx`、`ep/src/app/[locale]/categories/[slug]/page.tsx`
+- 状态：implemented
+- 备注：绿色 140deg 渐变 hero（同 BannerSlide）+ 装饰圆 + pill 标签 + 22px 黑标题；卡片 2 列、80×80 emoji 浅绿径向背景块、底部 "立即查看 →" CTA；详情页 hero 右下角浮 116×116 emoji 大图作视觉锚点。
+
+## R-20260514-018 卡片视觉升级 + banner / grid 间距
+
+- 来源角色：用户端
+- 背景：用户反馈"banner 和下面的 card 粘连，卡片设计的更好看些"。
+- 影响代码：同 R-017
+- 状态：implemented
+- 备注：hero `py-7` + 双层绿色阴影；grid `pt-7` 分层；卡片阴影 `0 2px 0 #e6fbf4 + 0 10px 26px rgba(0,164,120,.10)`；hover `-translate-y-1` + emoji `scale-110`；角标系统（分类卡：项目数 pill；服务卡：评分 ★ 金 pill + 价格绿 pill）。
+
+## R-20260514-019 "粗报价" 字样统一去除
+
+- 来源角色：产品
+- 背景：用户要求"把粗字去掉"，"粗报价"/"粗略报价"对国际用户不友好。
+- 影响代码：`ep/src/messages/zh.json`（9 处替换）
+- 状态：implemented
+- 备注：`getQuote / submitQuote / quoteFailed / quoteResultTitle / mainChainQuotePreview / quote_previewed / previewTitle / previewAction / previewRequired` 全部去 "粗"。
+
+## R-20260514-020 Hero banner input focus 时暂停轮播
+
+- 来源角色：用户端
+- 背景：用户在输入搜索关键词时，banner 自动滚动会打断输入体验。
+- 影响代码：`ep/src/components/home/HeroBannerCarousel.tsx`、`BannerSlide.tsx`、`HomeSearch.tsx`
+- 状态：implemented
+- 备注：`HomeSearch` 新增 `onFocusChange` 回调透传至 `HeroBannerCarousel.focusPaused` state，effect 依赖跳过自动定时器；blur 恢复；与既有 10s 手动操作暂停独立共存。
+
+## R-20260514-021 首页左上角品牌名移除
+
+- 来源角色：用户端 / 产品
+- 背景：用户要求"去掉 app 名，只保留地址项"。
+- 影响代码：`ep/src/components/home/HomePageClient.tsx`
+- 状态：implemented
+- 备注：删除 brand `Link` 块 + `useTranslations('Common')` import；地址按钮独占左侧 `maxWidth 100→160`。
+
+## R-20260514-022 登录改本地优先 → Supabase fallback
+
+- 来源角色：Backend API
+- 背景：`AuthService::login` 始终强行调 Supabase signInWithEmail，本地开发未配置时 cURL 6 "Could not resolve host: your-project-ref.supabase.co"，整个登录链路炸。
+- 影响代码：`app/Services/Client/AuthService.php`
+- 状态：implemented
+- 备注：先 `Hash::check` 本地 bcrypt；通过则不查云端、自签 JWT；失败 fallback Supabase（线上 OAuth/Supabase 用户兼容）；两边都失败 401。
+
+## R-20260514-023 后端自签 HS256 JWT（本地账号）
+
+- 来源角色：Backend API
+- 背景：R-022 本地校验通过后需要给前端返回可被中间件验证的 access_token。
+- 影响代码：`app/Services/Client/AuthService.php`（新 `buildLocalSessionPayload`、`finalizeLogin`）
+- 状态：implemented
+- 备注：缺 `auth_uid` 自动 `Str::uuid()` 分配持久化；JWT `iss=expatth-local / sub=auth_uid / aud=authenticated / exp=1h`；secret 复用 `SUPABASE_JWT_SECRET`，让 `AuthenticateSupabaseJwt` 中间件原样验证。
+
+## R-20260514-024 v1 路由组迁移到 supabase.auth 中间件
+
+- 来源角色：Backend API
+- 背景：`Route::prefix('v1')` protected 组用 legacy `api.auth`（SHA256 token_hash 比对 yipai_user_tokens），不识别 JWT；R-023 签的 JWT 调 `/auth/me` 仍 401。
+- 影响代码：`routes/api.php` line 64
+- 状态：implemented
+- 备注：`api.auth` → `supabase.auth`；R-20260513-011 双 auth 通道由此落地（本地 bcrypt 通道 + Supabase OAuth 通道共用 supabase.auth 中间件）。
+
+## R-20260514-025 SUPABASE_JWT_SECRET 本地默认值
+
+- 来源角色：Backend API / 本地开发
+- 背景：`.env` 里 `SUPABASE_JWT_SECRET=` 空，导致 R-023 签 JWT 失败 + 中间件返回 "supabase jwt secret not configured"。
+- 影响代码：`epbkend/.env`
+- 状态：implemented
+- 备注：dev 默认值 `local-dev-jwt-secret-do-not-use-in-production-32chars`（53 字符 ≥ HS256 推荐长度）；生产环境替换为 Supabase Dashboard 真实 JWT secret。
+
+## R-20260514-026 商家端 Supabase env 占位补齐
+
+- 来源角色：商家端
+- 背景：`epmerchant/.env.local` 完全没 `NEXT_PUBLIC_SUPABASE_URL` / `_ANON_KEY`，`createBrowserClient('', '')` 模块顶层构造时抛 "Your project's URL and API key are required" runtime error。
+- 影响代码：`epmerchant/.env.local`
+- 状态：implemented
+- 备注：与用户端 ep `.env.local` 同款占位 `your-project-ref.supabase.co` / `your-anon-key-here`，lib 非空校验通过。OAuth 按钮真点会失败但页面不再炸。
+
+## R-20260514-027 yipai_merchant_accounts 本地登录账号 seed
+
+- 来源角色：Backend API / 本地开发
+- 背景：`LocalDevSeeder` 只 seed `yipai_users` + `yipai_merchants`，漏 `yipai_merchant_accounts`（商家登录用的真实账号表，与客户表完全独立）；merchant1@test.com 商家端登录 401 invalid credentials。
+- 影响代码：`database/migrations/2026_05_14_120000_seed_local_merchant_account.php`
+- 状态：implemented
+- 备注：merchant_id=1 (Demo Bangkok Cleaning Co.) + email merchant1@test.com + bcrypt('test1234') + status=active；找不到 Demo 商家时 no-op（生产安全）。
+
+## R-20260514-028 用户端下单 serviceAddress 带 lat/lng
+
+- 来源角色：用户端 / Backend API
+- 背景：`StandardServiceInlineQuote` 之前只发 `serviceAddress: { address: string }`，后端 `MerchantMatchingService::generateCandidates` 读 `serviceAddress.lat/lng` 算与商家距离 → 拿不到坐标。
+- 影响代码：`ep/src/components/standard-services/StandardServiceInlineQuote.tsx`（quote-preview + create-order 两处）
+- 状态：implemented
+- 备注：`readSavedLocation().lat/lng` 一并塞进 `serviceAddress`；类型为 `number` 才发，避免 undefined 污染。
+
+## R-20260514-029 商家端 profile 一键 GPS 定位按钮
+
+- 来源角色：商家端
+- 背景：商家也要提供定位才能让派单链路算距离；profile/info 页之前只有手动 lat/lng 数字输入。
+- 影响代码：`epmerchant/src/app/[locale]/merchant/profile/info/page.tsx`（新 `useCurrentLocation` + UI 按钮）
+- 状态：implemented
+- 备注：`navigator.geolocation.getCurrentPosition` 取 GPS → setLat/setLng (7 位精度)；底部提示坐标 + 精度（±Nm）。手动输入仍可。POST `/api/v1/merchant/profile` `location.lat/lng` 已在 R-034 (2026-04-28 系) 支持。
+
+## R-20260514-030 MerchantMatchingService 兼容 radius_meters 字段
+
+- 来源角色：Backend API
+- 背景：`serviceAreaStatus` 只识别 `radiusKm` / `maxDistanceKm`，但 R-008 seed 的 capability `service_area` 用的是 `radius_meters` → `$maxKm = null` 直接放行，远距离仍 eligible。
+- 影响代码：`app/Services/Common/MerchantMatchingService.php`
+- 状态：implemented
+- 备注：兼容 `radiusKm / maxDistanceKm / radiusMeters / radius_meters` 多种命名；兜底从 `merchant.service_radius_meters` 读。端到端验证：近 0.03km score 106.67 eligible / 远 131.77km score 0 拒绝。
+
+## R-20260513-013 通用定价基础（距离 + 节假日 + 打赏，三件套）
+
+- 来源角色：产品 / Backend API
+- 背景：所有 tier 1 服务（R-004/-005/-006，未来扩展的杀虫/除草/泳池/宠物/清洁系列）共享三件事——按商家到客户距离加价、按节假日附加、客户可选打赏。后台全部可配置。
+- 需要的接口：
+  - 后台 (Dcat Admin) 三张表的 CRUD 页：`pricing_distance_tiers` / `holiday_surcharges` / `tip_presets`
+  - 报价 API 内部计算函数 `PricingService::computeDistanceFee(km, serviceCode)` / `computeHolidaySurcharge(date, serviceCode)` / `listTipPresets(serviceCode)`
+- 需要的表 / Schema 草案：
+  - **yipai_pricing_distance_tiers**：`id` / `service_code` (NULL=全局默认) / `from_km`（含）/ `to_km`（含，NULL=无上限）/ `rate_per_km`（baht）/ `min_fee`（该阶梯最小收费）/ `active` / `effective_from` / `effective_to`
+  - **yipai_pricing_holiday_surcharges**：`id` / `service_code` (NULL=全局) / `date_kind`（fixed / recurring_weekly / recurring_yearly）/ `date_value` (YYYY-MM-DD 或 'MON' 或 'MM-DD') / `surcharge_type`（flat / percent）/ `surcharge_amount` / `label` / `active`
+  - **yipai_pricing_tip_presets**：`id` / `service_code` (NULL=全局) / `amount` / `sort_order` / `active`
+- 影响代码：3 个 migration；`App/Services/Common/PricingService.php`（计算）；`App/Admin/Controllers/Pricing*Controller.php`（Dcat 后台 3 个菜单）；用户端 QuotePreview API 调用扩展；订单详情显示分项。
+- 状态：accepted
+- 备注：
+  - 距离计算用 haversine(yipai_user_addresses.lat/lng, yipai_merchants.lat/lng)。
+  - 阶梯举例：`[{0..10km, 0 baht/km}, {10..20km, 10}, {20..null, 12}]`。
+  - 节假日 `date_kind` 三种：fixed=泼水节 2026-04-13、recurring_yearly=每年 04-13、recurring_weekly=每周日。
+  - 打赏 100% 归商家，平台不抽佣（与产品确认）。预设举例：[10, 20, 50, 100]。
+  - 报价 API 返回 pricing 分项（base / distance / holiday / subtotal），tip 在客户结算时单独选；订单详情明细展示。
+
+## R-20260513-007 yipai_merchant_accounts 加 auth_uid
+
+- 来源角色：Backend API
+- 背景：商家端 OAuth/Supabase JWT 中间件查 `yipai_merchant_accounts.auth_uid`，但该列原本不存在，调用即报错。
+- 影响代码：`database/migrations/2026_05_13_020000_add_auth_uid_to_yipai_merchant_accounts.php`。
+- 状态：implemented
+- 备注：CHAR(36) UNIQUE NULL；与 `yipai_users.auth_uid` 对称设计。
+
+## R-20260513-008 Supabase JWT 中间件列名归一 (supabase_uid → auth_uid)
+
+- 来源角色：Backend API
+- 背景：项目内部统一用 `auth_uid` 作为第三方身份字段，不绑定具体供应商（Supabase/Google/LINE/未来其他）。原代码混用 `supabase_uid` 不一致。
+- 影响代码：`AuthenticateSupabaseJwt.php`、`AuthenticateSupabaseMerchantJwt.php`、`ResolveOptionalSupabaseUser.php`、`ChatController.php`、`Services/Client/AuthService.php`。
+- 状态：implemented
+- 备注：查询字段、attribute key、注释全部 `supabase_uid` → `auth_uid`；`YipaiUser` model fillable 补 `auth_uid`；`YipaiMerchantAccount` 用 `$guarded=[]` 已自动允许。
+
+## R-20260513-009 Supabase JWT 中间件 auto-provision
+
+- 来源角色：Backend API
+- 背景：JWT 验过但 `yipai_users` 找不到行原本直接 401，OAuth 首次进来必挂。
+- 影响代码：`AuthenticateSupabaseJwt.php` 新增 `autoProvisionUser` 方法。
+- 状态：implemented
+- 备注：1) 先按 claims.email 找老 yipai_users 行（兼容数据库登录用户）；找到就回填 auth_uid。2) 找不到则建新 yipai_users 行：phone 用 `sb_<uid 前 17>` 占位、password 用随机串、role=customer、status=active。商家端中间件暂不 auto-provision（KYC 必须人工，避免脏数据）。
+
+## R-20260513-010 OAuth 回调写 localStorage（前端兼容）
+
+- 来源角色：用户端 / 商家端
+- 背景：现有 `auth-fetch` 从 localStorage 读 token；OAuth callback 默认只写 Supabase cookie，不通老链路。
+- 影响代码：`ep/src/app/[locale]/auth/callback/route.ts`、`epmerchant/src/app/[locale]/merchant/(auth)/callback/route.ts`。
+- 状态：implemented
+- 备注：callback 返回小段 HTML + 内联 JS，把 access_token / refresh_token / expiry 写进 localStorage 同时下发 cookie，再跳转到 next。
+
+## R-20260513-011 双 auth 通道并存（数据库登录 + Supabase JWT）
+
+- 来源角色：Backend API
+- 背景：用户允许两种登录方式：1) 旧数据库 email+password 走 yipai_user_tokens；2) Supabase JWT 走 auth_uid。前端调 API 时只发一个 Authorization Bearer，后端需要识别两种。
+- 需要的接口：受保护路由按需挂 `supabase.auth.optional + api.auth`（Supabase 先识别，识别上设 api_user，legacy 继续；都未识别则 401）；或写新 `api.auth.dual` 元中间件统一处理。
+- 状态：implemented
+- 备注：实际落地方式：R-20260514-022 + R-20260514-023 + R-20260514-024 联合实现——本地 bcrypt 通过后后端自签 HS256 JWT（secret 复用 SUPABASE_JWT_SECRET），与 Supabase 签的 JWT 走同一个 `supabase.auth` 中间件验证，无需新中间件，路由组只挂一次。原 v0 方案被这个更简洁的方案取代。
+
+## R-20260513-012 CS 派单台（Dcat Admin 菜单）
+
+- 来源角色：Backend API / 运营
+- 背景：v1 订单进 `pending_cs_assign` 状态后，客服在 Dcat Admin 看候选商家、一键派单。
+- 需要的接口：新订单状态 + 候选匹配 service + Dcat 后台菜单 + 派单端点。
+- 影响代码：`yipai_orders` 状态枚举、`CandidateMatchingService`、`App/Admin/Controllers/CsAssignController`、`migration: pending_cs_assign 状态`。
+- 状态：draft
+- 备注：业务流程全 Dcat、开发流程全 dashboard（决策 D3）；后期演进为系统广播 + 抢单。
+
 ---
 
 ## 维护
