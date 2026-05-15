@@ -1120,6 +1120,60 @@
 - 关联代码：`ep/src/components/home/HomeServiceList.tsx`、`ep/src/components/home/CategoryChips.tsx`、`ep/src/components/home/category-buckets.ts`、`ep/src/components/home/home-types.ts`、`ep/src/components/standard-services/SortSheet.tsx`、`ep/src/app/[locale]/page.tsx`、`ep/tests/e2e/home-filter.spec.ts`
 - spec：`docs/superpowers/specs/2026-05-16-home-filter-and-spotlight-search-design.md`
 
+## R-20260516-002 Spotlight 搜索 API 合同
+
+- 来源角色：用户端 / UX / Backend API
+- 背景：用户希望首页搜索框打开 Spotlight 风格全局搜索面板，结果分三个子集（标准服务 / 商家 / 广场帖子）；当前 shared/backend/BFF 都无搜索 API
+- 需要的接口：`GET /api/v1/search`
+- 请求字段草案：query `q` (1-50 chars 必填)、`types` (csv: service/merchant/post，默认全部)、`limit` (int 1-10，每子集，默认 3)、`locale` (zh/en/th，默认 zh)、`city` (城市 code，可选)
+- 响应字段草案：`data: { results: { service: StandardService[], merchant: Merchant[], post: Post[] }, total: { service: N, merchant: N, post: N } }`
+- 失败场景：422 EX_SEARCH_QUERY_TOO_SHORT / EX_SEARCH_QUERY_TOO_LONG / EX_INVALID_TYPE
+- 影响页面：`/[locale]` 首页搜索框
+- 状态：accepted
+- 备注：v1 用 SQL LIKE，v2 可升级 ES 或 PostgreSQL 全文（与 R-20260428-029 v2.0 暂停的语义搜索独立）
+- 关联合同：本条
+- 关联代码：待实现
+- spec：`docs/superpowers/specs/2026-05-16-home-filter-and-spotlight-search-design.md` §3.3
+
+## R-20260516-003 Spotlight 后端实现
+
+- 来源角色：Backend API
+- 背景：实现 R-002 定义的合同
+- 需要的接口：实现 `GET /api/v1/search`
+- 请求字段草案：见 R-002
+- 响应字段草案：见 R-002
+- 失败场景：见 R-002
+- 影响页面：N/A
+- 状态：accepted
+- 备注：依赖 R-002 合同；v1 SQL LIKE 跨 yipai_standard_services / yipai_merchants / yipai_square_posts 三表
+- 关联合同：R-20260516-002
+- 关联代码：待实现 `app/Http/Controllers/Api/V1/SearchController.php`、`routes/api.php`、`tests/Feature/SearchApiTest.php`
+
+## R-20260516-004 Spotlight BFF 代理
+
+- 来源角色：用户端
+- 背景：BFF 透传后端 + envelope 规范化为 `data: {results, total}` 形态（避免 V-20260515-006 envelope 漂移再发生）
+- 需要的接口：`GET /api/search` (ep BFF)
+- 请求字段草案：query 全部透传到 `/api/v1/search`
+- 响应字段草案：BFF envelope `{code, message, data: {results, total}}`
+- 失败场景：透传后端 4xx/5xx；网络失败返回 502
+- 影响页面：N/A
+- 状态：accepted
+- 备注：依赖 R-003 后端就绪
+- 关联合同：R-20260516-002
+- 关联代码：待实现 `ep/src/app/api/search/route.ts`
+
+## R-20260516-005 Spotlight 前端 UI
+
+- 来源角色：用户端 / UX
+- 背景：Spotlight 全屏 sheet 组件 + 三件套预热 + 三子集展示 + 点结果跳转 + 上滑/ESC/× 三种关闭
+- 需要的接口：`GET /api/search` + 复用 `/api/merchants/featured`、`/api/posts?sort=hot` 作三件套预热
+- 影响页面：`/[locale]` 首页搜索框
+- 状态：accepted
+- 备注：依赖 R-004 BFF 就绪；移动端全屏 sheet（桌面 modal v2 再做）
+- 关联合同：R-20260516-002
+- 关联代码：待实现 `ep/src/components/search/*`、`ep/src/lib/search/recent-searches.ts`
+
 ---
 
 ## 维护
