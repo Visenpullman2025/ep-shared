@@ -45,6 +45,9 @@
 | **`EX_PAYMENT_NOT_READY`** | 订单**未**达到允许 **支付/预授权** 的**工作流+支付**组合态 | 422 |
 | **`EX_AFTER_SALES_NOT_ALLOWED`** | 当前订单**不可**发起或推进售后 | 422 |
 | **`EX_AFTER_SALES_DUPLICATE_CASE`** | 对同一**售后类型**重复**非法**（若禁止多开） | 409/422（**待决策**） |
+| **`EX_SEARCH_QUERY_TOO_SHORT`** | 搜索 query 长度 < 1 | 422 |
+| **`EX_SEARCH_QUERY_TOO_LONG`** | 搜索 query 长度 > 50 | 422 |
+| **`EX_INVALID_TYPE`** | 搜索 types 含未知值 | 422 |
 
 ## 4. 多语言
 
