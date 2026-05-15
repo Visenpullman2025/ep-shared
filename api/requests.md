@@ -1071,6 +1071,25 @@
 - 状态：draft
 - 备注：业务流程全 Dcat、开发流程全 dashboard（决策 D3）；后期演进为系统广播 + 抢单。
 
+## R-20260515-001 平台法律协议 v1 占位符待填
+
+- 来源角色：产品 / 法务 / 运营
+- 背景：平台法律协议体系（`docs/superpowers/specs/2026-05-15-platform-legal-docs-design.md`、`docs/superpowers/plans/2026-05-15-platform-legal-docs-v1-zh.md`）首版上线，5 篇协议中文正文已起草，但以下 4 个占位变量仍待用户确定后写入 `ep-shared/legal/*/zh.md`：
+  - `{{COMPANY_NAME}}` — 运营主体公司名（建议泰国 Co., Ltd.）
+  - `{{COMPANY_ADDRESS}}` — 注册地址
+  - `{{SUPPORT_EMAIL}}` — 客服 / 用户联系邮箱
+  - `{{DPO_EMAIL}}` — 数据保护官（PDPA 第 41 条要求）联系邮箱
+- 需要的接口：N/A（文档替换）。
+- 影响页面：`/zh/legal/*`（用户端 + 商家端公开页 + 设置入口）+ 注册端 combined 视图。
+- 失败场景：在确定前任何公开渠道（含 Apple 审核提交）暴露占位符将损害平台专业形象与合规审查。
+- 状态：draft
+- 备注：
+  - 占位符在 5 篇文件中均以 `{{NAME}}` 形式出现；用户提供后通过一次性 sed 批量替换并 bump 各篇 frontmatter `version`。
+  - 替换前**不可**提交 App Store 审核。
+  - 邮箱建议域名与平台主域一致（如 `support@expatth.com`、`dpo@expatth.com`）以便后续 SPF/DKIM 配置。
+- 关联合同：N/A
+- 关联代码：`ep-shared/legal/privacy-policy/zh.md`、`terms-of-service/zh.md`、`community-guidelines/zh.md`、`ugc-reporting/zh.md`、`merchant-agreement/zh.md`
+
 ---
 
 ## 维护
