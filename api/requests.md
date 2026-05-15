@@ -1129,7 +1129,7 @@
 - 响应字段草案：`data: { results: { service: StandardService[], merchant: Merchant[], post: Post[] }, total: { service: N, merchant: N, post: N } }`
 - 失败场景：422 EX_SEARCH_QUERY_TOO_SHORT / EX_SEARCH_QUERY_TOO_LONG / EX_INVALID_TYPE
 - 影响页面：`/[locale]` 首页搜索框
-- 状态：accepted
+- 状态：implemented
 - 备注：v1 用 SQL LIKE，v2 可升级 ES 或 PostgreSQL 全文（与 R-20260428-029 v2.0 暂停的语义搜索独立）
 - 关联合同：本条
 - 关联代码：待实现
@@ -1144,7 +1144,7 @@
 - 响应字段草案：见 R-002
 - 失败场景：见 R-002
 - 影响页面：N/A
-- 状态：accepted
+- 状态：implemented
 - 备注：依赖 R-002 合同；v1 SQL LIKE 跨 yipai_standard_services / yipai_merchants / yipai_square_posts 三表
 - 关联合同：R-20260516-002
 - 关联代码：待实现 `app/Http/Controllers/Api/V1/SearchController.php`、`routes/api.php`、`tests/Feature/SearchApiTest.php`
@@ -1158,7 +1158,7 @@
 - 响应字段草案：BFF envelope `{code, message, data: {results, total}}`
 - 失败场景：透传后端 4xx/5xx；网络失败返回 502
 - 影响页面：N/A
-- 状态：accepted
+- 状态：implemented
 - 备注：依赖 R-003 后端就绪
 - 关联合同：R-20260516-002
 - 关联代码：待实现 `ep/src/app/api/search/route.ts`
@@ -1169,7 +1169,7 @@
 - 背景：Spotlight 全屏 sheet 组件 + 三件套预热 + 三子集展示 + 点结果跳转 + 上滑/ESC/× 三种关闭
 - 需要的接口：`GET /api/search` + 复用 `/api/merchants/featured`、`/api/posts?sort=hot` 作三件套预热
 - 影响页面：`/[locale]` 首页搜索框
-- 状态：accepted
+- 状态：implemented
 - 备注：依赖 R-004 BFF 就绪；移动端全屏 sheet（桌面 modal v2 再做）
 - 关联合同：R-20260516-002
 - 关联代码：待实现 `ep/src/components/search/*`、`ep/src/lib/search/recent-searches.ts`
