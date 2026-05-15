@@ -730,6 +730,20 @@
 
 ---
 
+## GET /api/v1/search
+
+- 状态：implemented
+- 备注：v1 SQL LIKE 跨 standard_services / merchants / square_posts 三表，公开无 JWT；R-20260516-003 实现
+- 调用方：用户端
+- 权限：无 JWT
+- 请求：query `q`(必)、`types`(csv: service/merchant/post)、`limit`(int 1-10)、`locale`、`city`(可选)
+- 响应：`data: { results: { service: [], merchant: [], post: [] }, total: { service: N, merchant: N, post: N } }`
+- 错误码：EX_SEARCH_QUERY_TOO_SHORT (422)、EX_SEARCH_QUERY_TOO_LONG (422)、EX_INVALID_TYPE (422)
+- 实现位置：`SearchController@index`
+- 前端使用位置：待实现 SpotlightOverlay (R-20260516-005)
+
+---
+
 ## 维护
 
 - 新接口上线：在本文件**追加**一条，**状态**从 `implemented` 或 `compatibility` 中选一。  
