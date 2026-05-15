@@ -2,7 +2,7 @@
 
 > ep-shared 的入口索引。任何 AI 进入会话第一步只读 CHARTER.md 和本文件。
 > 其他文件按下表触发读取。
-> 最后更新：2026-05-12
+> 最后更新：2026-05-15
 
 ## L0 必读
 
@@ -29,7 +29,7 @@
 | 内部接口 | api/internal-api.md |
 | AI 协作细节 | workflow/ai-protocol.md |
 | 斜杠命令 | workflow/slash-commands.md |
-| 启动 / 检查命令 | ../help.md, docs/EXPATTH_HELP.md（待建） |
+| 启动 / 检查命令 | ../help.md, ../EXPATTH_HELP.md |
 
 ## L2 审计触发
 
@@ -53,7 +53,7 @@ L2 进入时必须读 `data/violations.json` 中所有 `open` 条目。
 
 ## 禁区
 
-- `archive/`：历史快照，仅供查阅，不基于其行动（待建目录，迁移 roles/, reports/ 时使用）
+- `archive/2026-04-28-P0.5/`：历史快照，仅供查阅，不基于其行动（已存放 P0.5 时期 roles/ 与 reports/）
 - `status/*`：全自动生成，编辑上游而非此目录（待建）
 - `node_modules/`, `.git/`, `.next/`, `vendor/`, `.codex/`, `.swarm/`, `.claude-flow/`, `.playwright-cli/`：工具产物
 
@@ -61,11 +61,12 @@ L2 进入时必须读 `data/violations.json` 中所有 `open` 条目。
 
 冲突按 CHARTER §4 处理。
 
-## 迁移提示
+## 迁移完成情况
 
-以下文件正在过渡中，迁移完成前继续读现有路径：
+2026-05-15 完成情况：
 
-- `PROJECT_RULES.md`：等价于 CONSTITUTION.md，迁移完成后归档
-- `VIOLATIONS.md`：是 `data/violations.json` 的副本，迁移完成后删除
-- `STATUS.md`：人工维护，未来由 dashboard 自动生成
-- `roles/`, `reports/`：P0.5 时期资料，待归档到 `archive/2026-04-28-P0.5/`
+- `PROJECT_RULES.md` → 已删除，由 CONSTITUTION.md 替代
+- `VIOLATIONS.md` → 已删除，唯一源是 `data/violations.json`
+- `roles/`, `reports/` → 已归档到 `archive/2026-04-28-P0.5/`
+- `STATUS.md` → 仍人工维护，未来由 dashboard 自动生成（dashboard 已上线 30004 端口）
+- `EXPATTH_HELP.md` → 已存在（仓库根，不在 docs/ 内）

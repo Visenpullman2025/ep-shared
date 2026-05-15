@@ -107,7 +107,8 @@
 - 失败场景：404 `code` 不存在或已下线；401 仅当某环境要求登录（默认访客可读则无）。
 - 待决策点：下线路径用 **HTTP 404** 与 **410** 二选一；列表是否返回未开放项给管理态 BFF（若需要则另需 admin 合同）。
 - 影响页面：首页、类目、标准服务落地页。
-- 状态：**implemented**（P1a：`GET /api/v1/standard-services*` 已登记在 `api/registry.md`）
+- 状态：**implemented**
+- 备注：P1a：`GET /api/v1/standard-services*` 已登记在 `api/registry.md`
 - 关联合同：user-api §1
 - 关联代码：`StandardServiceController@index`、`StandardServiceController@show`
 
@@ -123,7 +124,8 @@
 - 失败场景：404 标准服务不存在；422 无可用模板版本。
 - 待决策点：多版本并存时默认拉「当前 published」规则；与现网 `form_schema` 的字段名迁移映射表在 P1 由后端给出。
 - 影响页面：需求填写、校验。
-- 状态：**implemented**（P1a：`GET /api/v1/standard-services/{code}/requirement-template` 已登记在 `api/registry.md`）
+- 状态：**implemented**
+- 备注：P1a：`GET /api/v1/standard-services/{code}/requirement-template` 已登记在 `api/registry.md`
 - 关联合同：user-api §2
 - 关联代码：`StandardServiceController@requirementTemplate`
 
@@ -139,7 +141,8 @@
 - 失败场景：422 **RequirementPayload** 与模板不合（见 `EX_REQUIREMENT_PAYLOAD_INVALID`）；**404** 标准服务不存在；401 若策略要求登录后询价（**待决策**）。
 - 待决策点：未登录可询价时风控与限流；与旧路双写/覆盖策略。
 - 影响页面：下单前估价、重入恢复。
-- 状态：**implemented**（P1a：`POST /api/v1/standard-services/{code}/quote-preview` 已登记在 `api/registry.md`）
+- 状态：**implemented**
+- 备注：P1a：`POST /api/v1/standard-services/{code}/quote-preview` 已登记在 `api/registry.md`
 - 关联合同：user-api §3
 - 关联代码：`StandardServiceController@quotePreview`、`StandardServicePreviewService`；旧参考 `ServiceProcessTemplateController@servicePricePreview`（**compatibility**）
 
@@ -155,7 +158,8 @@
 - 失败场景：422 `quotePreviewId` 无效/过期/与 `code` 不一致；地址/手机门禁等现网 422；重复单策略。
 - 待决策点：是否允许 **无** `quotePreviewId` 的弱网重试（不推荐，若允许须单独 R- 放开）。
 - 影响页面：提交订单、订单详情。
-- 状态：**implemented**（P1b 本地闭环：`standardServiceCode + quotePreviewId + requirementPayload + serviceAddress` 已可创建订单；候选/MQC 子实体仍按 R-009/R-014 planned）
+- 状态：**implemented**
+- 备注：P1b 本地闭环：`standardServiceCode + quotePreviewId + requirementPayload + serviceAddress` 已可创建订单；候选/MQC 子实体仍按 R-009/R-014 planned
 - 关联合同：user-api §4、§10
 - 关联代码：`OrderController@store`、`OrderFlowService`、`StandardServiceOrderPayloadResolver`
 
@@ -171,7 +175,8 @@
 - 失败场景：422 订单态不允许、**`EX_ORDER_MQC_NOT_ALLOWED`**、**`EX_CANDIDATE_EXPIRED`/`EX_MQC_DUPLICATE`/`EX_USER_CONFIRM_DUPLICATE`**（见 `error-codes`）；409 多确认单竞态（**待决策** 定唯一策略）。
 - 待决策点：一订单多商家并行报价时，是否只允许一条 **accepted** MQC。
 - 影响页面：认价、去支付。
-- 状态：**implemented**（P1：后端路由、用户端 BFF 与订单详情/订单中心入口已接）
+- 状态：**implemented**
+- 备注：P1：后端路由、用户端 BFF 与订单详情/订单中心入口已接
 - 关联合同：user-api §5
 - 关联代码：`MeCenterController@confirmMerchantQuote`、`OrderP1Service@confirmMerchantQuote`、`ep` `src/app/api/orders/[orderNo]/confirm-merchant-quote/route.ts`、`P1OrderMainChainBlock`
 
@@ -186,7 +191,8 @@
 - 失败场景：N/A
 - 影响页面：全端展示、运营报表、BI。
 - 待决策点：迁移期**双写**还是仅新单用新枚举；老单**洗数据**策略。
-- 状态：**implemented**（P1b 本地：API 对外返回目标 `workflowStatus`、`nextAction`，迁移期返回 `legacyWorkflowStatus`；洗数/DB 双写仍待后续）
+- 状态：**implemented**
+- 备注：P1b 本地：API 对外返回目标 `workflowStatus`、`nextAction`，迁移期返回 `legacyWorkflowStatus`；洗数/DB 双写仍待后续
 - 关联合同：`state-machine.md`、全角色订单字段
 - 关联代码：`OrderWorkflowStatusPresenter`、`OrderFlowService`、`MeCenterController`
 
@@ -202,7 +208,8 @@
 - 失败场景：**`EX_AFTER_SALES_NOT_ALLOWED`**、422 参数、403 非本人。
 - 待决策点：可发起售后的**订单主态+支付态**白名单；与**退款**通道是否分单。
 - 影响页面：订单详情「售后」、客服协同。
-- 状态：**implemented**（P1 最小发起；子类型与枚举仍可后续细化）
+- 状态：**implemented**
+- 备注：P1 最小发起；子类型与枚举仍可后续细化
 - 关联合同：user-api §8
 - 关联代码：`MeCenterController@createAfterSalesCase`、`OrderP1Service@createAfterSalesCase`、`ep` `src/app/api/orders/[orderNo]/after-sales/route.ts`、`P1AfterSalesForm`
 
@@ -222,7 +229,8 @@
 - 失败场景：同 001
 - 待决策点：列表**是否**默认不展开大块，仅详情展开。
 - 影响页面：订单中心、详情页、状态条。
-- 状态：**implemented**（订单列表/详情已返回新主链扩展块）
+- 状态：**implemented**
+- 备注：订单列表/详情已返回新主链扩展块
 - 关联合同：user-api §7
 - 关联代码：`OrderMainChainPresenter`、`MeCenterController@orders`、`MeCenterController@orderDetail`
 
@@ -241,7 +249,8 @@
 - 失败场景：403、422 绑定非法 **standardServiceCode**、审核态禁止编辑（**待决策**）。
 - 待决策点：与旧 `POST /merchant/services` 的**数据双写/迁移**顺序。
 - 影响页面：商家能力配置、任务匹配。
-- 状态：**implemented**（P1：后端 CRUD 与商家端最小管理页已接）
+- 状态：**implemented**
+- 备注：P1：后端 CRUD 与商家端最小管理页已接
 - 关联合同：merchant-api §2
 - 关联代码：`MerchantPortalController` capability methods、`MerchantCapabilityService`、`YipaiMerchantCapability`、`epmerchant` `merchant/capabilities`
 
@@ -258,7 +267,8 @@
 - 失败场景：422 候选已 **expired**、**状态不允许**、**`EX_CANDIDATE_EXPIRED`/`EX_MQC_DUPLICATE`** 等；403 非本商。
 - 待决策点：候选过期是否自动释放下一候选；**重复提交** MQC 是否 409/422。
 - 影响页面：商家待办、报价、日历。
-- 状态：**implemented**（P1：候选列表与 MQC 提交已接）
+- 状态：**implemented**
+- 备注：P1：候选列表与 MQC 提交已接
 - 关联合同：merchant-api §4–5
 - 关联代码：`MerchantPortalController@orderRequests`、`MerchantPortalController@submitQuoteConfirmation`、`MerchantOrderRequestService`、`YipaiMerchantCandidate`、`YipaiMerchantQuoteConfirmation`、`epmerchant` `merchant/order-requests`
 
@@ -274,7 +284,8 @@
 - 失败场景：403
 - 待决策点：评分公式是否对商家可见明细。
 - 影响页面：商家我的、信任展示。
-- 状态：**implemented**（P1 只读接口与商家端页面已接；评分数据仍可分期丰富）
+- 状态：**implemented**
+- 备注：P1 只读接口与商家端页面已接；评分数据仍可分期丰富
 - 关联合同：merchant-api §8
 - 关联代码：`MerchantPortalController@creditProfile`、`MerchantCreditProfileService`、`YipaiMerchantCreditProfile`、`YipaiMerchantCreditEvent`、`epmerchant` `merchant/credit-profile`
 
@@ -290,7 +301,8 @@
 - 失败场景：422 结构非法、时区/日期不合法。
 - 待决策点：与 **现网** `bookable-days` 用户端接口的**兼容**与**废弃**时间；曼谷时区单一源。
 - 影响页面：商家日历、用户选日/匹配。
-- 状态：**accepted**（P2：与 R-021 合并推进；字段按 merchant-api §2–3 和后端实现收敛）
+- 状态：**accepted**
+- 备注：P2：与 R-021 合并推进；字段按 merchant-api §2–3 和后端实现收敛
 - 关联合同：merchant-api §3
 - 关联代码：现网 `getAvailability`/`updateAvailability`（**implemented** 行为不变至 P1）
 
@@ -303,7 +315,8 @@
 - 需要的接口（草案，**未进 user-api 必实现列表**）：`GET` 按 `quotePreviewId` 取粗报快照与是否过期；与 **POST …/quote-preview** 的**幂等键**协同。
 - 待决策点：是否必须做；若不做，则由 **R-012** 详情**仅**用订单侧快照保证。
 - 影响页面：恢复会话、刷新估价。
-- 状态：**draft**（**未**在 P0.5 合同锁死路径；若不做则本条保持 draft 或 rejected）
+- 状态：**draft**
+- 备注：**未**在 P0.5 合同锁死路径；若不做则本条保持 draft 或 rejected
 - 关联合同：待定
 - 关联代码：无
 
@@ -318,7 +331,8 @@
 - 响应字段草案：不裁剪业务字段，错误体透传。
 - 失败场景：401/404/422 与上游一致；禁止 BFF 自定义平行错误枚举。
 - 影响页面：首页/类目/标准服务详情/需求页/粗报价/下单在 **ep** 的调用链。
-- 状态：**implemented**（P1b：用户端 BFF 已透传 `POST /api/orders` 新体，标准服务报价页可用 `quotePreviewId` 创建订单）
+- 状态：**implemented**
+- 备注：P1b：用户端 BFF 已透传 `POST /api/orders` 新体，标准服务报价页可用 `quotePreviewId` 创建订单
 - 关联合同：user-api §1–3、§4
 - 关联代码：`ep` `src/app/api/standard-services/route.ts`、`[code]/route.ts`、`[code]/requirement-template/route.ts`、`[code]/quote-preview/route.ts`、`src/app/api/orders/route.ts`；页面 `src/app/[locale]/standard-services/page.tsx`、`[code]/page.tsx`、`[code]/quote/page.tsx`；`src/lib/requirement-form.ts`、`src/lib/standard-services.ts`
 
@@ -333,7 +347,8 @@
 - 响应字段草案：N/A
 - 失败场景：已分享旧 URL 的 301/302 与客户端回退（待产品定）。
 - 影响页面：首页、分类页、服务详情、下单、登录/资料补全的 next 参数。
-- 状态：**implemented**（P1：旧 `orders/new?serviceId=` 与 `services/[id]` 已降级为兼容提示 / 标准服务入口）
+- 状态：**implemented**
+- 备注：P1：旧 `orders/new?serviceId=` 与 `services/[id]` 已降级为兼容提示 / 标准服务入口
 - 关联合同：user-api §0、`docs/boundaries.md` §2
 - 关联代码：`ep` `src/app/[locale]/orders/new/page.tsx`、`src/app/[locale]/services/[id]/page.tsx`
 

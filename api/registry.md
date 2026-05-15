@@ -96,7 +96,8 @@
 
 ## GET /api/v1/services
 
-- 状态：compatibility（**非**新流程主入口；旧「商家上架列表」视角）
+- 状态：compatibility
+- 备注：**非**新流程主入口；旧「商家上架列表」视角
 - 调用方：用户端、访客
 - 权限：无 JWT
 - 请求：查询参数以实现为准
@@ -122,7 +123,8 @@
 
 ## GET /api/v1/services/{id}/create-data
 
-- 状态：compatibility（模板字段；与 **RequirementTemplate** 语义衔接）
+- 状态：compatibility
+- 备注：模板字段；与 **RequirementTemplate** 语义衔接
 - 调用方：用户端
 - 权限：无 JWT
 - 请求：路径 `id`（现网为商家 `service` 主键）
@@ -159,7 +161,8 @@
 
 ## POST /api/v1/services/{id}/price-preview
 
-- 状态：compatibility（粗报价；目标语义为 **QuotePreview** 的一条实现路径）
+- 状态：compatibility
+- 备注：粗报价；目标语义为 **QuotePreview** 的一条实现路径
 - 调用方：用户端
 - 权限：无 JWT
 - 请求：`processData`、地址等
@@ -269,7 +272,8 @@
 
 ## POST /api/v1/orders
 
-- 状态：implemented（兼容旧 `serviceId`；P1b 已支持 `standardServiceCode` + `quotePreviewId`）
+- 状态：implemented
+- 备注：兼容旧 `serviceId`；P1b 已支持 `standardServiceCode` + `quotePreviewId`
 - 调用方：用户端
 - 权限：用户 JWT
 - 请求：新主链为 `standardServiceCode`、`quotePreviewId`、`requirementPayload`、`serviceAddress`；旧兼容仍含 `serviceId`、`processData`、`quotedAmount`
@@ -375,7 +379,8 @@
 
 ## GET /api/v1/orders 与 /{orderNo} 与 子路径
 
-- 状态：implemented（P1 已追加新主链扩展块）
+- 状态：implemented
+- 备注：P1 已追加新主链扩展块
 - 调用方：用户端
 - 权限：用户 JWT
 - 请求：路径 `orderNo`
@@ -462,7 +467,8 @@
 
 ## POST /api/v1/orders
 
-- 状态：implemented（P2 动态推荐）
+- 状态：implemented
+- 备注：P2 动态推荐
 - 调用方：用户端
 - 权限：用户 JWT
 - 追加行为：新主链订单会调用 `MerchantMatchingService`，按能力启用、`readyStatus`、服务区域、容量/档期、信用分、评分、距离生成 `MerchantCandidate`。
@@ -472,7 +478,8 @@
 
 ## GET/POST/PUT /api/v1/merchant/capabilities*
 
-- 状态：implemented（P2 能力字段扩展）
+- 状态：implemented
+- 备注：P2 能力字段扩展
 - 调用方：商家端
 - 权限：商家 JWT
 - 追加请求/响应：`readyStatus`、`timeSlots`、`blackoutDates`、`matchingPolicyCode`、`workflowPolicyCode`；保留 `serviceArea`、`capacityRule`、`extraDistanceRule`、`openDates`。
@@ -481,7 +488,8 @@
 
 ## GET/PUT /api/v1/merchant/availability
 
-- 状态：implemented（P2 availability 字段扩展）
+- 状态：implemented
+- 备注：P2 availability 字段扩展
 - 调用方：商家端
 - 权限：商家 JWT
 - 追加请求/响应：`readyStatus`、`capacityRule`、`timeSlots`、`blackoutDates`，保留 `openDates`。
@@ -490,7 +498,8 @@
 
 ## GET /api/v1/orders 与 GET /api/v1/orders/{orderNo}
 
-- 状态：implemented（P2/P3 展示字段扩展）
+- 状态：implemented
+- 备注：P2/P3 展示字段扩展
 - 调用方：用户端
 - 权限：用户 JWT
 - 追加响应：`serviceTitle`、`serviceTitleI18n`、`standardService`、`paymentHold`、`settlement`、`fulfillmentEvents`、候选 `matchScore/matchFactors/distanceKm/availabilityStatus`。
@@ -499,7 +508,8 @@
 
 ## GET /api/v1/merchant/orders
 
-- 状态：implemented（P2/P3 展示字段扩展）
+- 状态：implemented
+- 备注：P2/P3 展示字段扩展
 - 调用方：商家端
 - 权限：商家 JWT
 - 追加响应：当前代码稳定返回 `pricing`、开始服务门禁字段、目标 `workflowStatus`、`legacyWorkflowStatus`、`nextAction`、`fulfillmentEvents`、`settlement`、`creditImpact`、`canReviewCustomer` / `merchantReview`；允许 `paymentStatus=authorized` 的订单进入开始服务门禁。
@@ -633,6 +643,90 @@
 - 实现位置：`ChatController@markRead`
 - 前端使用位置：用户端 Chat 详情进入时
 - 关联需求：R-20260510-002
+
+---
+
+## P5 UGC 合规与新增 BFF（2026-05-15 反向补登）
+
+下列接口在 BFF 与/或后端已落地但 registry 漏登，2026-05-15 全屏审计后反向补登。补登原则参考 V-20260513-001 同款方式，对应越界审计见 V-20260513-001（合同登记前已落代码）。
+
+## POST /api/v1/reports
+
+- 状态：implemented
+- 备注：App Review 1.2 UGC 合规；后端 Laravel 实现待补，BFF 在后端 4xx/5xx 时仍返回 `{code:0, message:"queued_pending_backend"}` 让 UI 给用户合规反馈
+- 调用方：用户端、商家端
+- 权限：可选 JWT
+- 请求：JSON `{type, targetType, targetId, reason, note, blockUser?}`
+- 响应：`{queued: bool}` 或后端真实响应
+- 实现位置：BFF `ep/src/app/api/reports/route.ts`、`epmerchant/src/app/api/reports/route.ts`；后端待实现
+- 前端使用位置：双端 `components/safety/ReportSheet.tsx`
+- 合同来源：`docs/design-log.md` 2026-05-15 第十一轮
+
+## POST /api/v1/users/{userId}/block 与 DELETE 同路径
+
+- 状态：implemented
+- 备注：App Review 1.2 UGC 屏蔽机制；后端 4xx/5xx 时同 reports 走 queued_pending_backend
+- 调用方：用户端、商家端
+- 权限：用户 JWT
+- 请求：POST 创建屏蔽 / DELETE 取消屏蔽
+- 实现位置：BFF `ep/src/app/api/users/[userId]/block/route.ts`、`epmerchant/src/app/api/users/[userId]/block/route.ts`；后端待实现
+- 前端使用位置：双端 `ReportSheet` 屏蔽 checkbox 触发
+- 合同来源：`docs/design-log.md` 2026-05-15 第十一轮
+
+## GET /api/v1/cities
+
+- 状态：implemented
+- 备注：城市列表，支持位置感知排序
+- 调用方：用户端
+- 权限：无 JWT
+- 请求：query `locale`、可选 `lat`、`lng`
+- 响应：城市数组
+- 实现位置：BFF `ep/src/app/api/cities/route.ts`；后端 `CityController`（推断）
+
+## GET /api/v1/me/posts
+
+- 状态：implemented
+- 备注：当前用户广场帖子列表
+- 调用方：用户端
+- 权限：用户 JWT
+- 实现位置：BFF `ep/src/app/api/me/posts/route.ts`；后端通过 SquareController 等
+- 前端使用位置：`MePostsTab`（个人主页 posts tab）
+
+## GET /api/v1/uploads/oss-policy
+
+- 状态：implemented
+- 备注：BFF 路径 `/api/oss/policy`；用于头像、证件、广场图片等 OSS 直传
+- 调用方：用户端、商家端
+- 权限：用户/商家 JWT
+- 请求：query `scene`（user-avatar / square-image / verification 等）
+- 响应：OSS 直传 policy（host/dir/policy/signature/expire 等）
+- 实现位置：BFF `ep/src/app/api/oss/policy/route.ts`、`epmerchant/src/app/api/merchant/uploads/oss/route.ts`；后端 OSS Controller
+
+## POST /api/v1/oss/upload（BFF 兼容路径）
+
+- 状态：implemented
+- 备注：浏览器 → BFF 中转 → OSS 的代理上传，避开 CORS；与 oss-policy 并存
+- 调用方：用户端
+- 权限：用户 JWT
+- 实现位置：BFF `ep/src/app/api/oss/upload/route.ts`
+
+## GET / POST / GET /api/v1/me/wallets*
+
+- 状态：implemented
+- 备注：钱包余额、流水、充值请求、提现请求；BFF 多个细分路由
+- 调用方：用户端
+- 权限：用户 JWT
+- 实现位置：BFF `ep/src/app/api/me/wallets/{,records,recharge,recharge-requests,withdraw}/route.ts`；后端 WalletController + 充值/提现 Controller
+- 前端使用位置：`/me/wallet-flow`、`/me/recharge`、`/me/withdraw`
+
+## GET /api/v1/feed 与 /api/v1/posts（旧/新别名）
+
+- 状态：implemented
+- 备注：广场 feed；epmerchant 端通过 `/api/posts` 镜像访问 `/api/v1/posts`，2026-05-15 第十一轮新建商家端 BFF 修复死调用
+- 调用方：用户端、商家端
+- 权限：无 JWT（读）
+- 实现位置：BFF `ep/src/app/api/posts/route.ts`、`epmerchant/src/app/api/posts/route.ts`；后端 SquareController/PostController
+- 合同来源：`docs/design-log.md` 2026-05-15 第十一轮
 
 ---
 
