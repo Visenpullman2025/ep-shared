@@ -1105,6 +1105,21 @@
 - 关联合同：N/A
 - 关联代码：`ep-shared/legal/privacy-policy/zh.md`、`terms-of-service/zh.md`、`community-guidelines/zh.md`、`ugc-reporting/zh.md`、`merchant-agreement/zh.md`
 
+## R-20260516-001 首页 chip + 排序 in-page filter
+
+- 来源角色：用户端 / UX
+- 背景：用户报告 "清洁 chip → 空页面"，澄清后真实意图是首页 in-page filter，而非 navigate 到二级页
+- 需要的接口：无新增（复用现有 `/api/standard-services`）
+- 请求字段草案：N/A
+- 响应字段草案：N/A
+- 失败场景：N/A（纯前端改动）
+- 影响页面：`/[locale]` 首页
+- 状态：implemented
+- 备注：复用 SortSheet（新增 excludeKeys prop 隐藏 recent）；CategoryChips 改 controlled；新建 HomeServiceList client 持有 bucket+sort state；不引 URL state
+- 关联合同：N/A
+- 关联代码：`ep/src/components/home/HomeServiceList.tsx`、`ep/src/components/home/CategoryChips.tsx`、`ep/src/components/home/category-buckets.ts`、`ep/src/components/home/home-types.ts`、`ep/src/components/standard-services/SortSheet.tsx`、`ep/src/app/[locale]/page.tsx`、`ep/tests/e2e/home-filter.spec.ts`
+- spec：`docs/superpowers/specs/2026-05-16-home-filter-and-spotlight-search-design.md`
+
 ---
 
 ## 维护
